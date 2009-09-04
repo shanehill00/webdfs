@@ -46,12 +46,12 @@ require_once 'PHPUnit/Runner/Version.php';
 require_once 'PHPUnit/TextUI/TestRunner.php';
 require_once 'PHPUnit/Util/Filter.php';
 
-require_once 'PHPDFS/DataLocator/RUSHp.php';
+require_once 'WebDFS/DataLocator/RUSHp.php';
 /**
  * @package    DataLocator
  * @subpackage UnitTests
  */
-class PHPDFS_DataLocator_RUSHpTest extends PHPUnit_Framework_TestCase
+class WebDFS_DataLocator_RUSHpTest extends PHPUnit_Framework_TestCase
 {
     private $data_config = null;
     
@@ -60,12 +60,12 @@ class PHPDFS_DataLocator_RUSHpTest extends PHPUnit_Framework_TestCase
     }
 
     /**
-     * Tests that we get a PHPDFS_DataLocator_RUSHp object and that it functions as expected
+     * Tests that we get a WebDFS_DataLocator_RUSHp object and that it functions as expected
      */
     public function testInstance()
     {
-        $hm = new PHPDFS_DataLocator_RUSHp( $this->data_config );
-        $this->assertType( 'PHPDFS_DataLocator_RUSHp', $hm  );
+        $hm = new WebDFS_DataLocator_RUSHp( $this->data_config );
+        $this->assertType( 'WebDFS_DataLocator_RUSHp', $hm  );
     }
 
    /**
@@ -76,10 +76,10 @@ class PHPDFS_DataLocator_RUSHpTest extends PHPUnit_Framework_TestCase
     {
         $badConf['clusters'] = array();
         try{
-            $hm = new PHPDFS_DataLocator_RUSHp( $badConf );
+            $hm = new WebDFS_DataLocator_RUSHp( $badConf );
             $this->fail("successfully instantiated the locator when we should have failed");
-        } catch( PHPDFS_DataLocator_Exception $e){
-            $this->assertType('PHPDFS_DataLocator_Exception', $e);
+        } catch( WebDFS_DataLocator_Exception $e){
+            $this->assertType('WebDFS_DataLocator_Exception', $e);
         }
     }
     
@@ -92,7 +92,7 @@ class PHPDFS_DataLocator_RUSHpTest extends PHPUnit_Framework_TestCase
 
         // force the replicationn degree to be OK
         $this->data_config['replicationDegree'] = 2;
-        $hm = new PHPDFS_DataLocator_RUSHp( $this->data_config );
+        $hm = new WebDFS_DataLocator_RUSHp( $this->data_config );
 
         $node = $hm->findNode( $uuid, $replicaNo );
         $nodeHost = $node['proxyUrl'];
@@ -119,7 +119,7 @@ class PHPDFS_DataLocator_RUSHpTest extends PHPUnit_Framework_TestCase
         $clusterToWeight = 0;
         $weight = 1;
 
-        $hm = new PHPDFS_DataLocator_RUSHp(
+        $hm = new WebDFS_DataLocator_RUSHp(
             $this->makeConfig($numClusters, $nodesPerCluster, $replicaCount, $clusterToWeight, $weight)
         );
 
