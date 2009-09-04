@@ -38,6 +38,8 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 /**
  * Test helper
  */
+require_once dirname(dirname( dirname(__FILE__) )). DIRECTORY_SEPARATOR . 'TestHelper.php';
+
 require_once 'PHPUnit/Framework.php';
 require_once 'PHPUnit/Framework/IncompleteTestError.php';
 require_once 'PHPUnit/Framework/TestCase.php';
@@ -56,7 +58,13 @@ class WebDFS_DataLocator_RUSHpsTest extends PHPUnit_Framework_TestCase
     private $data_config = null;
     
     public function setUp(){
-        $this->data_config = require 'cluster_config.php';
+        $numClusters = 2;
+        $nodesPerCluster = 2;
+        $replicaCount = 2;
+        $clusterToWeight = 0;
+        $weight = 1;
+
+        $this->data_config = $this->makeConfig($numClusters, $nodesPerCluster, $replicaCount, $clusterToWeight, $weight);
     }
 
     /**
@@ -107,6 +115,28 @@ class WebDFS_DataLocator_RUSHpsTest extends PHPUnit_Framework_TestCase
                 $this->assertTrue( $nodeHost == $nodeHost2, "failed consistently fetching a node got $nodeHost == $nodeHost2" );
             }
         }
-        echo("totalTime: $totalTime\navg time per lookup:".($totalTime/($N * $J) ) );
+    }
+
+    public function makeConfig($numClusters = 1, $numNodes = 1, $replicationDegree = 1, $clusterToWeight = 0, $weight = 1){
+        $clusters = array( 'replicationDegree' => $replicationDegree, 'clusters' => array() );
+
+        $diskNo = 0;
+        for( $n = 0; $n < $numClusters; $n++){
+            $nodes = array();
+            for( $i = 0; $i < $numNodes; $i++ ){
+                $nodes[] =
+                    array(
+                        'proxyUrl' => "http://www.example.com$diskNo/$n/$i/put/your/image/here"
+                    );
+                $diskNo++;
+            }
+            $clusterData = array();
+            $clusterData['weight'] =  (($n == $clusterToWeight) ? $weight : 1);
+            $clusterData['nodes'] = $nodes;
+
+            $clusters['clusters'][] = $clusterData;
+        }
+
+        return $clusters;
     }
 }
