@@ -90,13 +90,13 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  */
 
-require_once 'PHPDFS/Helper.php';
-require_once 'PHPDFS/Exception/PutException.php';
-require_once 'PHPDFS/Exception/DeleteException.php';
-require_once 'PHPDFS/Exception/GetException.php';
-require_once 'PHPDFS/Exception/MoveException.php';
+require_once 'WebDFS/Helper.php';
+require_once 'WebDFS/Exception/PutException.php';
+require_once 'WebDFS/Exception/DeleteException.php';
+require_once 'WebDFS/Exception/GetException.php';
+require_once 'WebDFS/Exception/MoveException.php';
 
-class PHPDFS
+class WebDFS
 {
 
     /**
@@ -205,12 +205,12 @@ class PHPDFS
      */
     const POSITION_NONE = -1;
 
-    const HEADER_REPLICA           = 'Phpdfs-Replica';
-    const HEADER_POSITION          = 'Phpdfs-Position';
-    const HEADER_GET_CONTEXT       = 'Phpdfs-Get-Context';
-    const HEADER_MOVE_CONTEXT      = 'Phpdfs-Move-Context';
-    const HEADER_MOVE_CONFIG_INDEX = 'Phpdfs-Move-Config-Index';
-    const HEADER_CONFIG_INDEX      = 'Phpdfs-Config-Index';
+    const HEADER_REPLICA           = 'Webdfs-Replica';
+    const HEADER_POSITION          = 'Webdfs-Position';
+    const HEADER_GET_CONTEXT       = 'Webdfs-Get-Context';
+    const HEADER_MOVE_CONTEXT      = 'Webdfs-Move-Context';
+    const HEADER_MOVE_CONFIG_INDEX = 'Webdfs-Move-Config-Index';
+    const HEADER_CONFIG_INDEX      = 'Webdfs-Config-Index';
 
     const MOVE_CONTEXT_START = 'start';
     const MOVE_CONTEXT_CREATE = 'create';
@@ -228,7 +228,7 @@ class PHPDFS
         $this->config = $config;
         $this->params = $params;
         // the configIndex tells us which config to use for this request
-        // it is initially passed to us via the header Phpdfs-Config-Index
+        // it is initially passed to us via the header Webdfs-Config-Index
         // we need this value because we need to hve a "history" of configs to
         // accommodate automatic movement of data.
         $configIndex = $this->params['configIndex'];
@@ -302,7 +302,7 @@ class PHPDFS
     }
 
     public function handleMoveDeleteError( $errno, $errmsg, $errfile = "filename not given", $errline = "line number not given", $errcontext = "not given" ){
-        throw new PHPDFS_Exception_PutException( "errno: $errno - errmsg: $errmsg - errfile: $errfile - errline: $errline" );
+        throw new WebDFS_Exception_PutException( "errno: $errno - errmsg: $errmsg - errfile: $errfile - errline: $errline" );
     }
     
     protected function doDeleteForMove(){
@@ -324,13 +324,13 @@ class PHPDFS
             $this->sendDeleteForMove();
         } catch( Exception $e ){
             $this->errorLog('doDeleteForMove', $this->params['action'], $this->params['moveContext'], $this->params['name'], $e->getMessage(), $e->getTraceAsString() );
-            PHPDFS_Helper::send500();
+            WebDFS_Helper::send500();
         }
         restore_error_handler();
     }
 
     public function handleMoveCreateError( $errno, $errmsg, $errfile = "filename not given", $errline = "line number not given", $errcontext = "not given" ){
-        throw new PHPDFS_Exception_PutException( " $errno : $errmsg : $errfile : $errline " );
+        throw new WebDFS_Exception_PutException( " $errno : $errmsg : $errfile : $errline " );
     }
     
     /**
@@ -375,14 +375,14 @@ class PHPDFS
             }
         } catch( Exception $e ){
             $this->errorLog('doCreateForMove', $this->params['action'], $this->params['moveContext'], $this->params['name'], $e->getMessage(), $e->getTraceAsString() );
-            PHPDFS_Helper::send500();
+            WebDFS_Helper::send500();
         }
         restore_error_handler();
     }
 
 
     public function handleMoveStartError( $errno, $errmsg, $errfile = "filename not given", $errline = "line number not given", $errcontext = "not given" ){
-        throw new PHPDFS_Exception_PutException( " $errno : $errmsg : $errfile : $errline " );
+        throw new WebDFS_Exception_PutException( " $errno : $errmsg : $errfile : $errline " );
     }
     /**
      *  called when we are in start context for a move operation
@@ -412,7 +412,7 @@ class PHPDFS
             }
         } catch( Exception $e ){
             $this->errorLog('doStartForMove', $this->params['action'], $this->params['moveContext'], $this->params['name'], $e->getMessage(), $e->getTraceAsString() );
-            PHPDFS_Helper::send500( );
+            WebDFS_Helper::send500( );
         }
         restore_error_handler();
     }
@@ -468,13 +468,13 @@ class PHPDFS
                 }
 
             } else {
-                PHPDFS_Helper::send404( $this->params['name'] );
+                WebDFS_Helper::send404( $this->params['name'] );
             }
         } else {
             // get the paths, choose one, and print a 301 redirect
             $nodes = $this->getTargetNodes();
             if( $nodes ){
-                PHPDFS_Helper::send301( $nodes[ 0 ]['proxyUrl'].'/'.$this->params['name'] );
+                WebDFS_Helper::send301( $nodes[ 0 ]['proxyUrl'].'/'.$this->params['name'] );
             }
         }
     }
@@ -531,11 +531,11 @@ class PHPDFS
     }
 
     public function handleSpoolError( $errno, $errmsg, $errfile = "filename not given", $errline = "line number not given", $errcontext = "not given" ){
-        throw new PHPDFS_Exception_PutException( "errno: $errno - errmsg: $errmsg - errfile: $errfile - errline: $errline" );
+        throw new WebDFS_Exception_PutException( "errno: $errno - errmsg: $errmsg - errfile: $errfile - errline: $errline" );
     }
 
     public function handleForwardDataError( $errno, $errmsg, $errfile = "filename not given", $errline = "line number not given", $errcontext = "not given" ){
-        throw new PHPDFS_Exception_PutException( "errno: $errno - errmsg: $errmsg - errfile: $errfile - errline: $errline" );
+        throw new WebDFS_Exception_PutException( "errno: $errno - errmsg: $errmsg - errfile: $errfile - errline: $errline" );
     }
 
     public function putData(){
@@ -550,9 +550,9 @@ class PHPDFS
             // save the data to the appropriate directory and remove the spooled file
             // but only if we are a targetNode, otherwise DO NOTHING
             $this->saveData( );
-        } catch( PHPDFS_Exception_PutException $e ){
+        } catch( WebDFS_Exception_PutException $e ){
             $this->errorLog('putData', $this->params['action'], $this->params['name'], $e->getMessage(), $e->getTraceAsString() );
-            PHPDFS_Helper::send500();
+            WebDFS_Helper::send500();
             // we want to be sure to exit here because we have errored
             // and the state of the file upload is unknown
             exit();
@@ -572,19 +572,19 @@ class PHPDFS
         set_error_handler( array( $this, "handleForwardDataError") );
         try{
             $this->forwardDataForPut( );
-        } catch( PHPDFS_Exception_PutException $e ){
+        } catch( WebDFS_Exception_PutException $e ){
             $this->errorLog('putForward', $this->params['action'], $this->params['name'], $e->getMessage(), $e->getTraceAsString() );
-            PHPDFS_Helper::send500();
+            WebDFS_Helper::send500();
         }
         restore_error_handler();
     }
 
     public function handleDeleteDataError( $errno, $errmsg, $errfile = "filename not given", $errline = "line number not given", $errcontext = "not given" ){
-        throw new PHPDFS_Exception_DeleteException( " $errno : $errmsg : $errfile : $errline " );
+        throw new WebDFS_Exception_DeleteException( " $errno : $errmsg : $errfile : $errline " );
     }
     
     public function handleForwardDeleteError( $errno, $errmsg, $errfile = "filename not given", $errline = "line number not given", $errcontext = "not given" ){
-        throw new PHPDFS_Exception_DeleteException( " $errno : $errmsg : $errfile : $errline " );
+        throw new WebDFS_Exception_DeleteException( " $errno : $errmsg : $errfile : $errline " );
     }
 
     public function deleteData(){
@@ -592,9 +592,9 @@ class PHPDFS
         set_error_handler( array( $this, "handleDeleteDataError") );
         try{
             $this->_deleteData( );
-        } catch( PHPDFS_Exception_DeleteException $e ){
+        } catch( WebDFS_Exception_DeleteException $e ){
             $this->errorLog('deleteData', $this->params['action'], $this->params['name'], $e->getMessage(), $e->getTraceAsString() );
-            PHPDFS_Helper::send500($error500Msg);
+            WebDFS_Helper::send500($error500Msg);
         }
         restore_error_handler();
 
@@ -602,9 +602,9 @@ class PHPDFS
         set_error_handler( array( $this, "handleForwardDeleteError") );
         try{
             $this->sendDelete();
-        } catch( PHPDFS_Exception_DeleteException $e ){
+        } catch( WebDFS_Exception_DeleteException $e ){
             $this->errorLog('deleteForward', $this->params['action'], $this->params['name'], $e->getMessage(), $e->getTraceAsString() );
-            PHPDFS_Helper::send500($error500Msg);
+            WebDFS_Helper::send500($error500Msg);
         }
         restore_error_handler();
     }
@@ -638,7 +638,7 @@ class PHPDFS
             $deleted = unlink( $this->finalPath );
             if( !$deleted ){
                 // throw exception if the delete failed
-                throw new PHPDFS_Exception_PutException("could not unlink ".$this->finalPath);
+                throw new WebDFS_Exception_PutException("could not unlink ".$this->finalPath);
             }
         }
     }
@@ -658,7 +658,7 @@ class PHPDFS
 
             if(  !rename( $this->tmpPath, $this->finalPath ) ){
                 // throw exception if the copy failed
-                throw new PHPDFS_Exception_PutException("final move operation failed when copying ".$this->tmpPath." to ".$this->finalPath );
+                throw new WebDFS_Exception_PutException("final move operation failed when copying ".$this->tmpPath." to ".$this->finalPath );
             }
         }
     }
@@ -741,7 +741,7 @@ class PHPDFS
             // disconnect the client before we start
             // replicating since we are a storage node
             // and already have the file
-            PHPDFS_Helper::disconnectClient($targetNodes, $this->params['fileName']);
+            WebDFS_Helper::disconnectClient($targetNodes, $this->params['fileName']);
             $this->sendDataForPut( $this->finalPath );
         } else {
             $this->sendDataForPut( $this->tmpPath );
@@ -749,7 +749,7 @@ class PHPDFS
             // disconnect only after we have
             // uploaded the file to the first
             // storage target node
-            PHPDFS_Helper::disconnectClient( $targetNodes, $this->params['fileName'] );
+            WebDFS_Helper::disconnectClient( $targetNodes, $this->params['fileName'] );
         }
 
     }
@@ -796,7 +796,7 @@ class PHPDFS
             $curl = curl_init();
             $headers = array();
             // disconnect before we make another request
-            PHPDFS_Helper::disconnectClient();
+            WebDFS_Helper::disconnectClient();
             $loops = 0;
             $nodeLength = count( $this->getTargetNodes( ) );
             do{
@@ -901,7 +901,7 @@ class PHPDFS
             $curl = curl_init();
             $headers = array();
             // disconnect before we make another request
-            PHPDFS_Helper::disconnectClient();
+            WebDFS_Helper::disconnectClient();
             $loops = 0;
             $nodeLength = count( $nodes );
             do{
@@ -947,7 +947,7 @@ class PHPDFS
             $curl = curl_init();
             $headers = array();
             // disconnect before we make another request
-            PHPDFS_Helper::disconnectClient();
+            WebDFS_Helper::disconnectClient();
             $loops = 0;
             $nodeLength = count( $this->getTargetNodes( ) );
             do{
@@ -996,7 +996,7 @@ class PHPDFS
             $curl = curl_init();
             $headers = array();
             // disconnect before we make another request
-            PHPDFS_Helper::disconnectClient();
+            WebDFS_Helper::disconnectClient();
             $loops = 0;
             $nodeLength = count( $nodes );
             do{
@@ -1042,7 +1042,7 @@ class PHPDFS
                 $curl = curl_init();
                 $headers = array();
                 // disconnect before we make another request
-                PHPDFS_Helper::disconnectClient();
+                WebDFS_Helper::disconnectClient();
                 $loops = 0;
                 $nodeLength = count( $this->getTargetNodes( ) );
                 do{
@@ -1078,7 +1078,7 @@ class PHPDFS
             } else {
                 $msg = "received command in start context to move ".$this->params['name']." but cannot find file!";
                 error_log($msg);
-                throw new PHPDFS_Exception_MoveException($msg);
+                throw new WebDFS_Exception_MoveException($msg);
             }
         }
     }
@@ -1096,7 +1096,7 @@ class PHPDFS
             $curl = curl_init();
             $headers = array();
             // disconnect before we make another request
-            PHPDFS_Helper::disconnectClient();
+            WebDFS_Helper::disconnectClient();
             $loops = 0;
             $nodeLength = count( $this->getTargetNodes( ) );
             do{

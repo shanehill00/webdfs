@@ -27,23 +27,23 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 */
 
-require_once('PHPDFS/Client.php');
+require_once('WebDFS/Client.php');
 
-class PHPDFS_Client{
+class WebDFS_Client{
 
     /**
      * the data locator that is used for looking up the
      * location of an object.
      *
-     * @var <PHPDFS_DataLocator_HonickyMillerR>
+     * @var <WebDFS_DataLocator_HonickyMillerR>
      */
     
     protected $locator = null;
     protected $config = null;
 
-    const PHPDFS_PUT_ERR = 1;
-    const PHPDFS_DELETE_ERR = 2;
-    const PHPDFS_GET_ERR = 3;
+    const WebDFS_PUT_ERR = 1;
+    const WebDFS_DELETE_ERR = 2;
+    const WebDFS_GET_ERR = 3;
 
     protected $errs;
 
@@ -55,20 +55,20 @@ class PHPDFS_Client{
         $this->config = $config;
 
         $this->errs = array(
-            self::PHPDFS_PUT_ERR => array(
-                'className' => 'PHPDFS_Exception_PutException',
+            self::WebDFS_PUT_ERR => array(
+                'className' => 'WebDFS_Exception_PutException',
                 'msg'   => 'PUT Exception',
-                'classPath' => 'PHPDFS/Exception/PutException.php'
+                'classPath' => 'WebDFS/Exception/PutException.php'
             ),
-            self::PHPDFS_DELETE_ERR => array(
-                'className' => 'PHPDFS_Exception_DeleteException',
+            self::WebDFS_DELETE_ERR => array(
+                'className' => 'WebDFS_Exception_DeleteException',
                 'msg'   => 'DELETE Exception',
-                'classPath' => 'PHPDFS/Exception/DeleteException.php'
+                'classPath' => 'WebDFS/Exception/DeleteException.php'
             ),
-            self::PHPDFS_GET_ERR => array(
-                'className' => 'PHPDFS_Exception_GetException',
+            self::WebDFS_GET_ERR => array(
+                'className' => 'WebDFS_Exception_GetException',
                 'msg'   => 'GET Exception',
-                'classPath' => 'PHPDFS/Exception/GetException.php'
+                'classPath' => 'WebDFS/Exception/GetException.php'
             ),
         );
     }
@@ -79,7 +79,7 @@ class PHPDFS_Client{
      *
      * @param <string> $fileId
      *
-     * @throws PHPDFS_Client_GetException
+     * @throws WebDFS_Client_GetException
      */
     public function &get( $fileId ){
         $paths = $this->getPaths($fileId);
@@ -94,7 +94,7 @@ class PHPDFS_Client{
             curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
             curl_setopt($curl, CURLOPT_FOLLOWLOCATION, true);
             $response = curl_exec($curl);
-            $this->checkError( $curl, self::PHPDFS_GET_ERR, $response );
+            $this->checkError( $curl, self::WebDFS_GET_ERR, $response );
         }
         return $response;
     }
@@ -102,7 +102,7 @@ class PHPDFS_Client{
     public function getPaths( $fileId ){
         $paths = array();
         $nodes = $this->locator->findNodes( $fileId );
-        $pathHash = PHPDFS_Helper::getPathHash($fileId);
+        $pathHash = WebDFS_Helper::getPathHash($fileId);
         foreach( $nodes as $node ){
             $data = array();
             $data['url'] = $node['proxyUrl'].'/'.$fileId;
@@ -116,7 +116,7 @@ class PHPDFS_Client{
     /**
      *
      * @param <string> $fileId
-     * @throws PHPDFS_Client_GetException
+     * @throws WebDFS_Client_GetException
      */
     public function delete( $fileId ){
         $paths = $this->getPaths($fileId);
@@ -128,7 +128,7 @@ class PHPDFS_Client{
             curl_setopt($curl, CURLOPT_URL, $url);
             curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
             $response = curl_exec($curl);
-            $this->checkError( $curl, self::PHPDFS_DELETE_ERR, $response );
+            $this->checkError( $curl, self::WebDFS_DELETE_ERR, $response );
         }
     }
 
@@ -136,7 +136,7 @@ class PHPDFS_Client{
      * @param <string> $fileId
      * @param <string> $filePath
      *
-     * @throws PHPDFS_Client_PutException
+     * @throws WebDFS_Client_PutException
      */
     public function put( $fileId, $filePath ){
         $this->set( $fileId, $filePath );
@@ -146,7 +146,7 @@ class PHPDFS_Client{
      * @param <string> $fileId
      * @param <string> $filePath
      *
-     * @throws PHPDFS_Client_PutException
+     * @throws WebDFS_Client_PutException
      */
     public function set( $fileId, $filePath ){
         $paths = $this->getPaths($fileId);
@@ -163,23 +163,23 @@ class PHPDFS_Client{
             curl_setopt($curl, CURLOPT_URL, $url);
             curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
             $response = curl_exec($curl);
-            $this->checkError( $curl, self::PHPDFS_PUT_ERR, $response );
+            $this->checkError( $curl, self::WebDFS_PUT_ERR, $response );
             fclose($fh);
         }
     }
 
     /**
      * @param <curl> $curl
-     * @param <int> $phpDfsErrCode
+     * @param <int> $webDfsErrCode
      * @param <reference> $additionalInfo
      */
-    protected function checkError( $curl, $phpDfsErrCode, &$additionalInfo = "" ){
+    protected function checkError( $curl, $webDfsErrCode, &$additionalInfo = "" ){
         $info = curl_getinfo( $curl );
         $isHttpErr =  isset( $info['http_code'] ) && ( $info['http_code'] >= 400 );
         $isOtherErr = curl_errno($curl);
         $data = array();
         if( $isOtherErr || $isHttpErr ){
-            $errInfo = $this->errs[ $phpDfsErrCode ];
+            $errInfo = $this->errs[ $webDfsErrCode ];
             require_once( $errInfo['classPath'] );
             $exceptionClass = $errInfo['className'];
             $data['httpCode'] = isset($info['http_code']) ? $info['http_code'] : '';
@@ -190,7 +190,7 @@ class PHPDFS_Client{
             //[content_type] => text/html; charset=ISO-8859-1
             //[http_code] => 404
             if( $isOtherErr ){
-                $msg = $phpDfsErrCode." - ".$errInfo['msg']. " : ".curl_errno($curl)." - " .curl_error($curl)." : $additionalInfo";
+                $msg = $webDfsErrCode." - ".$errInfo['msg']. " : ".curl_errno($curl)." - " .curl_error($curl)." : $additionalInfo";
             } else {
                 $msg = "http error! ".$info['http_code'];
             }
