@@ -29,12 +29,12 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 // this is the file that handles the uploads into the HM RUSH system
 
-require_once("PHPDFS.php");
-require_once("PHPDFS/Helper.php");
+require_once("WEbDFS.php");
+require_once("WebDFS/Helper.php");
 
-$config = PHPDFS_Helper::getConfig();
-$params = PHPDFS_Helper::getParams();
+$config = WebDFS_Helper::getConfig();
+$params = WebDFS_Helper::getParams();
 
-$dfs = new PHPDFS( $config, $params );
+$dfs = new WebDFS( $config, $params );
 $dfs->handleRequest();
 
