@@ -47,7 +47,7 @@ import org.apache.commons.httpclient.params.HttpMethodParams;
  *
  * @author shane
  */
-public class PHPDFSTestClient extends Thread {
+public class WebDFSTestClient extends Thread {
 
     private long time = 0;
     private long bytesToUpload = 0;
@@ -129,10 +129,10 @@ public class PHPDFSTestClient extends Thread {
     private ArrayList<String> filesToUpload = null;
     private ArrayList<String> baseUrls = null;
 
-    public PHPDFSTestClient( long bytesToUpload, int numThreads, double writeLoad, String filesToUploadFile, String baseUrlFile, long sleep, long uploadWait ){
+    public WebDFSTestClient( long bytesToUpload, int numThreads, double writeLoad, String filesToUploadFile, String baseUrlFile, long sleep, long uploadWait ){
         this.bytesToUpload = bytesToUpload;
         this.writeLoad = writeLoad;
-        PHPDFSTestClient.numThreads.compareAndSet(0, numThreads);
+        WebDFSTestClient.numThreads.compareAndSet(0, numThreads);
         filesToUpload = fileToArrayList(filesToUploadFile);
         baseUrls = fileToArrayList(baseUrlFile);
         this.sleep = sleep;
@@ -588,7 +588,7 @@ public class PHPDFSTestClient extends Thread {
     }
         
         for( int n = 0; n < threads; n++ ){
-            PHPDFSTestClient thw = new PHPDFSTestClient( bytesToUploadPerThread, threads, writeLoad, filesToUpload, baseUrls, sleep, uploadWait );
+            WebDFSTestClient thw = new WebDFSTestClient( bytesToUploadPerThread, threads, writeLoad, filesToUpload, baseUrls, sleep, uploadWait );
             thw.start();
         }
     }
