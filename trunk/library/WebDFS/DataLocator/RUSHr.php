@@ -37,9 +37,9 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 /**
  *  Exception class
  */
-require_once('PHPDFS/DataLocator/Exception.php');
+require_once('WebDFS/DataLocator/Exception.php');
 
-class PHPDFS_DataLocator_RUSHr
+class WebDFS_DataLocator_RUSHr
 {
 
     /**
@@ -109,7 +109,7 @@ class PHPDFS_DataLocator_RUSHr
     public function __construct( $dataConfig ){
 
         if( !isset( $dataConfig['clusters'] ) || !count( $dataConfig['clusters'] ) ){
-            throw new PHPDFS_DataLocator_Exception("data config to the Honicky-Miller locator does not contain a valid clusters property. bad joo joos mon!");
+            throw new WebDFS_DataLocator_Exception("data config to the Honicky-Miller locator does not contain a valid clusters property. bad joo joos mon!");
         }
 
         $this->replicationDegree = $dataConfig['replicationDegree'];
@@ -142,7 +142,7 @@ class PHPDFS_DataLocator_RUSHr
         $replicationDegree = $this->replicationDegree;
         // throw an exception if the data is no good
         if( ( $totalNodes <= 0 )  || ( $totalClusters <= 0 ) ){
-            throw new PHPDFS_DataLocator_Exception("the total nodes or total clusters is negative or 0.  bad joo joos!");
+            throw new WebDFS_DataLocator_Exception("the total nodes or total clusters is negative or 0.  bad joo joos!");
         }
 
         $sumRemainingNodes = $totalNodes;
@@ -175,7 +175,7 @@ class PHPDFS_DataLocator_RUSHr
 
             // prevent an infinite loop, in case there is a bug
             if( $currentCluster < 0 ){
-                throw new PHPDFS_DataLocator_Exception("the cluster index became negative while we were looking for the following id: $objKey.  This should never happen with any key.  There is a bug or maybe your joo joos are BAD!");
+                throw new WebDFS_DataLocator_Exception("the cluster index became negative while we were looking for the following id: $objKey.  This should never happen with any key.  There is a bug or maybe your joo joos are BAD!");
             }
 
             $clusterData = $clusterConfig[$currentCluster];

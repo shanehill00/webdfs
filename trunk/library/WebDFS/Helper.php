@@ -26,8 +26,8 @@ AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 */
-require_once 'PHPDFS.php';
-class PHPDFS_Helper {
+require_once 'WebDFS.php';
+class WebDFS_Helper {
 
 
     /**
@@ -54,10 +54,10 @@ class PHPDFS_Helper {
     public static function getConfig( $name = "cluster_config.php" ){
         if( !self::$config || $name ){
             if( extension_loaded("apc") ){
-                self::$config = apc_fetch("phpdfsconfig");
+                self::$config = apc_fetch("webdfsconfig");
                 if( self::$config === false ){
                     self::$config = require $name;
-                    apc_store("phpdfsconfig", self::$config);
+                    apc_store("webdfsconfig", self::$config);
                 }
             } else {
                 self::$config = require $name;
@@ -76,7 +76,7 @@ class PHPDFS_Helper {
             'position' => null,
             'configIndex' => 0,
             'moveConfigIndex' => 0,
-            'moveContext' => PHPDFS::MOVE_CONTEXT_START,
+            'moveContext' => WebDFS::MOVE_CONTEXT_START,
             'getContext' => '',
         );
         if( isset( $_SERVER['PATH_INFO'] ) ){
@@ -94,28 +94,28 @@ class PHPDFS_Helper {
 
             $headers = http_get_request_headers();
 
-            if( isset( $headers[ PHPDFS::HEADER_REPLICA ] ) ){
-                $params['replica'] = (int) $headers[ PHPDFS::HEADER_REPLICA ];
+            if( isset( $headers[ WebDFS::HEADER_REPLICA ] ) ){
+                $params['replica'] = (int) $headers[ WebDFS::HEADER_REPLICA ];
             }
 
-            if( isset( $headers[ PHPDFS::HEADER_POSITION ] ) ){
-                $params['position'] = (int) $headers[ PHPDFS::HEADER_POSITION ];
+            if( isset( $headers[ WebDFS::HEADER_POSITION ] ) ){
+                $params['position'] = (int) $headers[ WebDFS::HEADER_POSITION ];
             }
 
-            if( isset( $headers[ PHPDFS::HEADER_CONFIG_INDEX ] ) ){
-                $params['configIndex'] = (int) $headers[ PHPDFS::HEADER_CONFIG_INDEX ];
+            if( isset( $headers[ WebDFS::HEADER_CONFIG_INDEX ] ) ){
+                $params['configIndex'] = (int) $headers[ WebDFS::HEADER_CONFIG_INDEX ];
             }
 
-            if( isset( $headers[ PHPDFS::HEADER_MOVE_CONTEXT ] ) ){
-                $params['moveContext'] = strtolower( $headers[ PHPDFS::HEADER_MOVE_CONTEXT ] );
+            if( isset( $headers[ WebDFS::HEADER_MOVE_CONTEXT ] ) ){
+                $params['moveContext'] = strtolower( $headers[ WebDFS::HEADER_MOVE_CONTEXT ] );
             }
 
-            if( isset( $headers[ PHPDFS::HEADER_MOVE_CONFIG_INDEX ] ) ){
-                $params['moveConfigIndex'] = (int) $headers[ PHPDFS::HEADER_MOVE_CONFIG_INDEX ];
+            if( isset( $headers[ WebDFS::HEADER_MOVE_CONFIG_INDEX ] ) ){
+                $params['moveConfigIndex'] = (int) $headers[ WebDFS::HEADER_MOVE_CONFIG_INDEX ];
             }
 
-            if( isset( $headers[ PHPDFS::HEADER_GET_CONTEXT ] ) ){
-                $params['getContext'] = $headers[ PHPDFS::HEADER_GET_CONTEXT ];
+            if( isset( $headers[ WebDFS::HEADER_GET_CONTEXT ] ) ){
+                $params['getContext'] = $headers[ WebDFS::HEADER_GET_CONTEXT ];
             }
         }
         return $params;

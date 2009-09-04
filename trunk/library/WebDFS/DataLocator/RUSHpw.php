@@ -37,9 +37,9 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 /**
  *  Exception class
  */
-require_once('PHPDFS/DataLocator/Exception.php');
+require_once('WebDFS/DataLocator/Exception.php');
 
-class PHPDFS_DataLocator_RUSHpw
+class WebDFS_DataLocator_RUSHpw
 {
 
     /**
@@ -94,15 +94,15 @@ class PHPDFS_DataLocator_RUSHpw
      *  The values above are derived from the $dataConfig passed to the locator.
      *
      * @param  object $dataConfig
-     * @return PHPDFS_DataLocator_RUSHpw $this
+     * @return WebDFS_DataLocator_RUSHpw $this
      *
-     * @throws PHPDFS_DataLocator_Exception
+     * @throws WebDFS_DataLocator_Exception
      *
      */
     public function __construct( $dataConfig ){
 
         if( !isset( $dataConfig['clusters'] ) || !count( $dataConfig['clusters'] ) ){
-            throw new PHPDFS_DataLocator_Exception("data config to the Honicky-Miller locator does not contain a valid clusters property");
+            throw new WebDFS_DataLocator_Exception("data config to the Honicky-Miller locator does not contain a valid clusters property");
         }
 
         $this->totalClusters = count($dataConfig['clusters']);
@@ -137,7 +137,7 @@ class PHPDFS_DataLocator_RUSHpw
         
         // throw an exception if the data is no good
         if( ( $totalNodes <= 0 )  || ( $totalClusters <= 0 ) ){
-            throw new PHPDFS_DataLocator_Exception("the total nodes or total clusters is negative");
+            throw new WebDFS_DataLocator_Exception("the total nodes or total clusters is negative");
         }
 
         $sumRemainingNodes = $totalNodes;
@@ -173,7 +173,7 @@ class PHPDFS_DataLocator_RUSHpw
 
             // prevent an infinite loop, in case there is a bug
             if( $currentCluster < 0 ){
-                throw PHPDFS_DataLocator_Exception("the cluster index became negative while we were looking for the following id: $objKey.  This should never happen with any key.  Try checking the toothpaste you are using for some clues.");
+                throw WebDFS_DataLocator_Exception("the cluster index became negative while we were looking for the following id: $objKey.  This should never happen with any key.  Try checking the toothpaste you are using for some clues.");
             }
 
             $clusterData = $clusterConfig[$currentCluster];

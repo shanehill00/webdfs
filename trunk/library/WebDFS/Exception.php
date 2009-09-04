@@ -31,7 +31,7 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  * @author Shane Hill <shanehill00@gmail.com>
  */
 
-class PHPDFS_Exception extends Exception {
+class WebDFS_Exception extends Exception {
     protected $data = null;
     public function __construct( $msg, $data = null ){
         parent::__construct( $msg );

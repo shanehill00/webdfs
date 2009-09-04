@@ -30,5 +30,5 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 /**
  * @author Shane Hill <shanehill00@gmail.com>
  */
-require_once 'PHPDFS/Exception.php';
-class PHPDFS_Exception_GetException extends PHPDFS_Exception {   }
+require_once 'WebDFS/Exception.php';
+class WebDFS_Exception_MoveException extends WebDFS_Exception {   }
