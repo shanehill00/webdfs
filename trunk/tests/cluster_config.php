@@ -39,8 +39,8 @@ return array(
             'data' => array(
                 array(
 
-                    'locatorClassName' => 'PHPDFS_DataLocator_RUSHr',
-                    'locatorClassPath' => 'PHPDFS/DataLocator/RUSHr.php',
+                    'locatorClassName' => 'WebDFS_DataLocator_RUSHr',
+                    'locatorClassPath' => 'WebDFS/DataLocator/RUSHr.php',
 
                     'storageRoot' => sys_get_temp_dir(),
                     'tmpRoot' => sys_get_temp_dir(),
