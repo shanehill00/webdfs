@@ -227,61 +227,61 @@ function makeCommandFiles( $nodeData ){
         if( $type == 'client' ){
             $client[] = 'scp -i /Users/shane/downloads/phpdfs-0.pem  '.
             "root@$publicDns:/tmp/phpdfs.stats.txt ".
-            "/Users/shane/dev/phpdfs/installs/test/statData/c5n3-2/client_stats.$publicDns.txt";
+            "/Users/shane/dev/webdfs/installs/test/statData/c5n3-2/client_stats.$publicDns.txt";
             
             $client[] = 'scp -i /Users/shane/downloads/phpdfs-0.pem  '.
             "root@$publicDns:/tmp/uploadedFiles ".
-            "/Users/shane/dev/phpdfs/installs/test/statData/c5n3-2/uploadedFiles.$publicDns.txt";
+            "/Users/shane/dev/webdfs/installs/test/statData/c5n3-2/uploadedFiles.$publicDns.txt";
 
             $client[] = 'scp -i /Users/shane/downloads/phpdfs-0.pem  '.
             "root@$publicDns:/tmp/downloadedFiles ".
-            "/Users/shane/dev/phpdfs/installs/test/statData/c5n3-2/downloadedFiles.$publicDns.txt";
+            "/Users/shane/dev/webdfs/installs/test/statData/c5n3-2/downloadedFiles.$publicDns.txt";
 
             $client[] = 'scp -i /Users/shane/downloads/phpdfs-0.pem  '.
             "root@$publicDns:/tmp/uploadIOExceptions ".
-            "/Users/shane/dev/phpdfs/installs/test/statData/c5n3-2/uploadIOExceptions.$publicDns.txt";
+            "/Users/shane/dev/webdfs/installs/test/statData/c5n3-2/uploadIOExceptions.$publicDns.txt";
 
             $client[] = 'scp -i /Users/shane/downloads/phpdfs-0.pem  '.
             "root@$publicDns:/tmp/uploadHttpExceptions ".
-            "/Users/shane/dev/phpdfs/installs/test/statData/c5n3-2/uploadHttpExceptions.$publicDns.txt";
+            "/Users/shane/dev/webdfs/installs/test/statData/c5n3-2/uploadHttpExceptions.$publicDns.txt";
 
             $client[] = 'scp -i /Users/shane/downloads/phpdfs-0.pem  '.
             "root@$publicDns:/tmp/uploadResponseErrors ".
-            "/Users/shane/dev/phpdfs/installs/test/statData/c5n3-2/uploadResponseErrors.$publicDns.txt";
+            "/Users/shane/dev/webdfs/installs/test/statData/c5n3-2/uploadResponseErrors.$publicDns.txt";
 
             $client[] = 'scp -i /Users/shane/downloads/phpdfs-0.pem  '.
             "root@$publicDns:/tmp/downloadIOExceptions ".
-            "/Users/shane/dev/phpdfs/installs/test/statData/c5n3-2/downloadIOExceptions.$publicDns.txt";
+            "/Users/shane/dev/webdfs/installs/test/statData/c5n3-2/downloadIOExceptions.$publicDns.txt";
 
             $client[] = 'scp -i /Users/shane/downloads/phpdfs-0.pem  '.
             "root@$publicDns:/tmp/downloadHttpExceptions ".
-            "/Users/shane/dev/phpdfs/installs/test/statData/c5n3-2/downloadHttpExceptions.$publicDns.txt";
+            "/Users/shane/dev/webdfs/installs/test/statData/c5n3-2/downloadHttpExceptions.$publicDns.txt";
 
             $client[] = 'scp -i /Users/shane/downloads/phpdfs-0.pem  '.
             "root@$publicDns:/tmp/downloadErrors ".
-            "/Users/shane/dev/phpdfs/installs/test/statData/c5n3-2/downloadErrors.$publicDns.txt";
+            "/Users/shane/dev/webdfs/installs/test/statData/c5n3-2/downloadErrors.$publicDns.txt";
         }
 
         if( $type == 'server'){
             $server[] = 'scp -i /Users/shane/downloads/phpdfs-0.pem  '.
             "root@$publicDns:/tmp/dataTotals.txt ".
-            "/Users/shane/dev/phpdfs/installs/test/statData/c5n3-2/dataTotals.$publicDns.txt";
+            "/Users/shane/dev/webdfs/installs/test/statData/c5n3-2/dataTotals.$publicDns.txt";
 
             $server[] = 'scp -i /Users/shane/downloads/phpdfs-0.pem  '.
             "root@$publicDns:/mnt/fileIndex ".
-            "/Users/shane/dev/phpdfs/installs/test/statData/c5n3-2/fileIndex.$publicDns.txt";
+            "/Users/shane/dev/webdfs/installs/test/statData/c5n3-2/fileIndex.$publicDns.txt";
             
             $server[] = 'scp -i /Users/shane/downloads/phpdfs-0.pem  '.
             "root@$publicDns:/mnt/dstat.stats ".
-            "/Users/shane/dev/phpdfs/installs/test/statData/c5n3-2/dstats.$publicDns.csv";
+            "/Users/shane/dev/webdfs/installs/test/statData/c5n3-2/dstats.$publicDns.csv";
 
             $server[] = 'scp -i /Users/shane/downloads/phpdfs-0.pem  '.
             "root@$publicDns:/usr/local/apache2/logs/access_log ".
-            "/Users/shane/dev/phpdfs/installs/test/statData/c5n3-2/$publicDns.access_log";
+            "/Users/shane/dev/webdfs/installs/test/statData/c5n3-2/$publicDns.access_log";
 
             $server[] = 'scp -i /Users/shane/downloads/phpdfs-0.pem  '.
             "root@$publicDns:/usr/local/apache2/logs/error_log ".
-            "/Users/shane/dev/phpdfs/installs/test/statData/c5n3-2/$publicDns.error_log";
+            "/Users/shane/dev/webdfs/installs/test/statData/c5n3-2/$publicDns.error_log";
         }
     }
     $client = join("\n",$client);

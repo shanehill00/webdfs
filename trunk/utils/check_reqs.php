@@ -255,7 +255,7 @@ function getConfig(){
     if( !isset( $argv[1] ) ){
         echo("
 ERROR:
-Please pass the location of the PHPDFS configuration file to be checked as the first parameter on the command line!
+Please pass the location of the WebDFS configuration file to be checked as the first parameter on the command line!
 ");
         exit();
     }
@@ -271,8 +271,8 @@ function getTestConfig(){
         'thisProxyUrl' =>  'http://192.168.0.2:80/dfs.php',
         'data' => array(
             array(
-                'locatorClassName' => 'PHPDFS_DataLocator_HonickyMillerR',
-                'locatorClassPath' => 'PHPDFS/DataLocator/HonickyMillerR.php',
+                'locatorClassName' => 'WebDFS_DataLocator_HonickyMillerR',
+                'locatorClassPath' => 'WebDFS/DataLocator/HonickyMillerR.php',
 
                 'storageRoot' => '/tmp/testData',
                 'tmpRoot' => '/tmp/testData',
@@ -298,7 +298,7 @@ function noExtCurl(){
         echo("
 ERROR:
 It appears that libcurl extension is not installed or is not loaded!
-You need lib curl to be installed and working to be able to use PHPDFS
+You need lib curl to be installed and working to be able to use WebDFS
 ==================
 ");
         exit();
@@ -308,7 +308,7 @@ function noExtUuid(){
         echo("
 ERROR:
 It appears that the pecl uuid extension is not installed or is not loaded!
-You need pecl uuid to be installed and working to be able to use PHPDFS
+You need pecl uuid to be installed and working to be able to use WebDFS
 ==================
 ");
         exit();
@@ -318,7 +318,7 @@ function noExtHttp(){
         echo("
 ERROR:
 It appears that the pecl_http extension is not installed or is not loaded!
-You need pecl_http to be installed and working to be able to use PHPDFS
+You need pecl_http to be installed and working to be able to use WebDFS
 ==================
 ");
     exit();
@@ -338,7 +338,7 @@ function noExtFileInfo(){
         echo("
 ERROR:
 It appears that fileinfo extension is not installed or is not loaded!
-You need fileinfo to be installed and working to be able to use PHPDFS
+You need fileinfo to be installed and working to be able to use WebDFS
 ==================
 ");
         exit();
@@ -348,7 +348,7 @@ function noExtFilter(){
         echo("
 ERROR:
 It appears that the filter extension is not installed or is not loaded!
-You need fileinfo to be installed and working to be able to use PHPDFS
+You need fileinfo to be installed and working to be able to use WebDFS
 ==================
 ");
         exit();
@@ -358,7 +358,7 @@ function noExtPcre(){
         echo("
 ERROR:
 It appears that the pcre extension is not installed or is not loaded!
-You need pcre to be installed and working to be able to use PHPDFS
+You need pcre to be installed and working to be able to use WebDFS
 ==================
 ");
         exit();
@@ -368,7 +368,7 @@ function configOK( $config ){
     echo("
 ==============================================
 || CONFIG OK!
-|| Your PHPDFS config looks ok.  sweet!
+|| Your WebDFS config looks ok.  sweet!
 || If you find bugs or problems please report
 || them to shanehill00 <<at>> gmail-com
 ==============================================

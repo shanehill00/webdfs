@@ -27,8 +27,8 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 */
 
-require_once 'PHPDFS/Client.php';
-require_once 'PHPDFS/Helper.php';
+require_once 'WebDFS/Client.php';
+require_once 'WebDFS/Helper.php';
 
 if( $_SERVER['REQUEST_METHOD'] == 'POST' ){
     handleUpload();
@@ -66,11 +66,11 @@ function showForm(){
 function handleUpload(){
 
     if( isset($_FILES['datafile']['tmp_name'])){
-        // first create the PHPDFS client.
-        $config = PHPDFS_Helper::getConfig();
-        $client = new PHPDFS_Client( $config );
+        // first create the WebDFS client.
+        $config = WebDFS_Helper::getConfig();
+        $client = new WebDFS_Client( $config );
 
-        // set the uploaded file in PHPDFS
+        // set the uploaded file in WebDFS
         $filepath = $_FILES['datafile']['tmp_name'];
         $name = $_POST['name'];
         
@@ -82,7 +82,7 @@ function handleUpload(){
         $urls = array();
         foreach( $paths as $path ){
             $url = $path['staticUrl'];
-            $urls[] = "<a href='$url'>$url</a> --- <a href='?delete=$name'>delete $name (deletes all replicas)</a> -- fetch <a href='?get=$name'>$name</a> using the PHPDFS_Client<br>";
+            $urls[] = "<a href='$url'>$url</a> --- <a href='?delete=$name'>delete $name (deletes all replicas)</a> -- fetch <a href='?get=$name'>$name</a> using the WebDFS_Client<br>";
         }
         showMessage($urls);
     }
@@ -90,8 +90,8 @@ function handleUpload(){
 }
 
 function getFile( $name ){
-    $config = PHPDFS_Helper::getConfig();
-    $client = new PHPDFS_Client( $config );
+    $config = WebDFS_Helper::getConfig();
+    $client = new WebDFS_Client( $config );
     $data = "";
     try{
         $data = $client->get($name);
@@ -100,7 +100,7 @@ function getFile( $name ){
         finfo_close( $finfo );
         header( "Content-Type: $contentType");
         header( "Content-Length: ".strlen( $data ) );
-    } catch( PHPDFS_Exception_GetException $e ) {
+    } catch( WebDFS_Exception_GetException $e ) {
         $errData = $e->getData();
         if( $errData['httpCode'] > 400 ){
             header(  $_SERVER['SERVER_PROTOCOL']." ".$errData['httpCode'] ) ;
@@ -112,8 +112,8 @@ function getFile( $name ){
 }
 
 function deleteFile( $name ){
-    $config = PHPDFS_Helper::getConfig();
-    $client = new PHPDFS_Client( $config );
+    $config = WebDFS_Helper::getConfig();
+    $client = new WebDFS_Client( $config );
     $client->delete($name);
 
     echo("$name was deleted. woo hoo!<br>try accessing the URLs below.<br><br>\n");
