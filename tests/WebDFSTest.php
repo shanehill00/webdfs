@@ -28,7 +28,7 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
 /**
- * @package    DataLocator
+ * @package    WebDFS
  * @subpackage UnitTests
  *   
  * @author     Shane Hill <shanehill00@gmail.com>
@@ -38,6 +38,7 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 /**
  * Test helper
  */
+require_once 'TestHelper.php';
 // start ouput buffering so we can
 // control when data is sent to STDOUT
 // we do this so we can prevent a failure
@@ -53,10 +54,10 @@ require_once 'PHPUnit/Util/Filter.php';
 
 require_once 'WebDFS.php';
 /**
- * @package    DataLocator
+ * @package    WebDFS
  * @subpackage UnitTests
  */
-class WebDFS_DataLocator_RUSHrTest extends PHPUnit_Framework_TestCase
+class WebDFSTest extends PHPUnit_Framework_TestCase
 {
     
     private $data_config = null;
@@ -64,15 +65,15 @@ class WebDFS_DataLocator_RUSHrTest extends PHPUnit_Framework_TestCase
     private function getParamsForPut(){
         return array
         (
-            'fileName' => test,
+            'fileName' => 'test',
             'pathHash' => '25/98',
-            'name' => test,
-            'action' => put,
+            'name' => 'test',
+            'action' => 'put',
             'replica' => 0,
             'position' => null,
             'configIndex' => 0,
             'moveConfigIndex' => 0,
-            'moveContext' => start,
+            'moveContext' => 'start',
             'getContext' => null,
         );
     }
@@ -80,15 +81,15 @@ class WebDFS_DataLocator_RUSHrTest extends PHPUnit_Framework_TestCase
     private function getParamsForGet(){
         return array
         (
-            'fileName' => test,
+            'fileName' => 'test',
             'pathHash' => '25/98',
-            'name' => test,
-            'action' => get,
+            'name' => 'test',
+            'action' => 'get',
             'replica' => 0,
             'position' => null,
             'configIndex' => 0,
             'moveConfigIndex' => 0,
-            'moveContext' => start,
+            'moveContext' => 'start',
             'getContext' => null,
         );
     }
@@ -96,15 +97,15 @@ class WebDFS_DataLocator_RUSHrTest extends PHPUnit_Framework_TestCase
     private function getParamsForDelete(){
         return array
         (
-            'fileName' => test,
+            'fileName' => 'test',
             'pathHash' => '25/98',
-            'name' => test,
-            'action' => delete,
+            'name' => 'test',
+            'action' => 'delete',
             'replica' => 0,
             'position' => null,
             'configIndex' => 0,
             'moveConfigIndex' => 0,
-            'moveContext' => start,
+            'moveContext' => 'start',
             'getContext' => null,
         );
     }
@@ -114,7 +115,7 @@ class WebDFS_DataLocator_RUSHrTest extends PHPUnit_Framework_TestCase
     }
 
     /**
-     * test the out functionality of webdfs
+     * test the put functionality of webdfs
      */
     public function testPut(){
         // create temp file to simulate input
@@ -130,7 +131,6 @@ class WebDFS_DataLocator_RUSHrTest extends PHPUnit_Framework_TestCase
         $dfs->handleRequest();
         $filePath = join('/', array( $this->data_config['data'][0]['storageRoot'], $params['pathHash'], $params['fileName'] ) );
         $this->assertFileExists( $filePath );
-        $this->assertFileEquals( $data['uri'], $filePath );
         unlink( $filePath );
         unlink( $data['uri'] );
     }
@@ -192,7 +192,7 @@ class WebDFS_DataLocator_RUSHrTest extends PHPUnit_Framework_TestCase
         $filePath = join('/', array( $this->data_config['data'][0]['storageRoot'], $params['pathHash'], $params['fileName'] ) );
         $this->assertFileExists( $filePath );
 
-        // now get the file we just put
+        // now delete the file we just put
         $params = $this->getParamsForDelete();
         $dfs = new WebDFS($this->data_config, $params );
         $dfs->handleRequest();

@@ -38,6 +38,8 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 /**
  * Test helper
  */
+require_once dirname(dirname( dirname(__FILE__) )). DIRECTORY_SEPARATOR . 'TestHelper.php';
+
 require_once 'PHPUnit/Framework.php';
 require_once 'PHPUnit/Framework/IncompleteTestError.php';
 require_once 'PHPUnit/Framework/TestCase.php';
@@ -56,7 +58,13 @@ class WebDFS_DataLocator_RUSHpwTest extends PHPUnit_Framework_TestCase
     private $data_config = null;
     
     public function setUp(){
-        $this->data_config = require 'cluster_config.php';
+        $numClusters = 2;
+        $nodesPerCluster = 2;
+        $replicaCount = 2;
+        $clusterToWeight = 0;
+        $weight = 1;
+
+        $this->data_config = $this->makeConfig($numClusters, $nodesPerCluster, $replicaCount, $clusterToWeight, $weight);
     }
 
     /**
@@ -110,154 +118,28 @@ class WebDFS_DataLocator_RUSHpwTest extends PHPUnit_Framework_TestCase
                 $this->assertTrue( $nodeHost == $nodeHost2, "failed consistently fetching a node got $nodeHost == $nodeHost2" );
             }
         }
-        echo("totalTime: $totalTime\navg time per lookup:".($totalTime/($N * $J) ) );
     }
 
-    protected function getStatsStructure(){
-        return array(
+    public function makeConfig($numClusters = 1, $numNodes = 1, $replicationDegree = 1, $clusterToWeight = 0, $weight = 1){
+        $clusters = array( 'replicationDegree' => $replicationDegree, 'clusters' => array() );
 
-            array(
-                'stats' => array( 'dist' => array(), 'hot' => array(), 'moved' => array( 'from' => array(), 'to' => array() ) ),
-                'total_clusters' => 1,
-            ),
-            array(
-                'stats' => array( 'dist' => array(), 'hot' => array(), 'moved' => array( 'from' => array(), 'to' => array() ) ),
-                'total_clusters' => 2,
-            ),
-            array(
-                'stats' => array( 'dist' => array(), 'hot' => array(), 'moved' => array( 'from' => array(), 'to' => array() ) ),
-                'total_clusters' => 3,
-            ),
-            array(
-                'stats' => array( 'dist' => array(), 'hot' => array(), 'moved' => array( 'from' => array(), 'to' => array() ) ),
-                'total_clusters' => 4,
-            ),
-            array(
-                'stats' => array( 'dist' => array(), 'hot' => array(), 'moved' => array( 'from' => array(), 'to' => array() ) ),
-                'total_clusters' => 5,
-            ),
-
-        );
-    }
-
-    protected function makeObjects( &$objs ){
-        $totalObjs = isset($argv[1]) ? $argv[1] : 1000;
-        for($n = 0; $n < $totalObjs; $n++){
-            $objId = uniqid();
-            // create an object key from the uuid of the object
-            // we would just use the UUID but this
-            // gets passed to srand which needs an int
-            $objKey = ( crc32( $objId ) >> 16 ) & 0x7fff;
-            $objs[ $objId ] = array( 'objKey' => $objKey, 'hot' => false);
-        }
-    }
-
-    /**
-     * in this test we demonstrate that objects
-     * are both optimally distributed and moved
-     * as resources are added
-    */
-
-    /**
-    public function testDistribution(){
-        
-        $totalTime = 0;
-
-        $stats = $this->getStatsStructure();
-
-
-        // create the objs that we will be placing
-        $objs = array();
-        $this->makeObject( $objs );
-
-        // now we loop on each config
-        // and take stats on the distribution
-        // and data movement
-
-        $hm = new DataLocator_HonickyMillerW( $this->data_config );
-        foreach($stats as $currConfig => &$confStats){
-
-            $disksPerCluster = 1;
-            $totalClusters = $confStats['total_clusters'];
-            $totalDisks = ($disksPerCluster * $totalClusters);
-
-            // build the clusters
-            $clusters = array();
-            for($n = 0; $n < $totalClusters; $n++){
-                $clusters[] = $disksPerCluster;
+        $diskNo = 0;
+        for( $n = 0; $n < $numClusters; $n++){
+            $nodes = array();
+            for( $i = 0; $i < $numNodes; $i++ ){
+                $nodes[] =
+                    array(
+                        'proxyUrl' => "http://www.example.com$diskNo/$n/$i/put/your/image/here"
+                    );
+                $diskNo++;
             }
+            $clusterData = array();
+            $clusterData['weight'] =  (($n == $clusterToWeight) ? $weight : 1);
+            $clusterData['nodes'] = $nodes;
 
-            foreach( $objs as $objId => &$obj){
-                $objKey = $obj['objKey'];
-                $time = microtime(true);
-                $disk = $hm->findNode( $objKey );
-                $totalTime += (microtime(true) - $time);
-
-                // create a hot node, we can only do this if we are:
-                // in the first iteration on the configs
-                // and the chosen bucket is the hot one as identified by the command line param hotBucket
-                // and the chosen object is hot as identified by the heatRate command line param
-                // the heatRate gives us a percentage of hot objects in the hot node
-                $rand = rand(1,100);
-
-                if($currConfig == 0 && ($rand <= $heatRate) && ( $disk == $hotDisk )){
-                    $obj['hot'] = true;
-                }
-
-                // figure out if this object is being moved
-                // something can only be moved if the curr config is greater than 0
-                $prevDisk = null;
-
-                if($currConfig > 0){
-                    $prevTotalClusters = $stats[ ($currConfig - 1 )]['total_clusters'];
-                    $prevTotalDisks = ($disksPerCluster * $prevTotalClusters);
-
-                    // build the clusters
-                    $prevClusters = array();
-                    for($n = 0; $n < $prevTotalClusters; $n++){
-                        $prevClusters[] = $disksPerCluster;
-                    }
-
-                    $prevDisk = honickyMillerLocate($obj['objKey'], $prevClusters, $prevTotalClusters, $prevTotalDisks);
-
-                    if($prevDisk == $disk){
-                        $prevDisk = null;
-                    }
-                }
-
-                //  now set the stats for the buckets
-                if(!isset($confStats['stats']['dist'][$disk]) ){
-                  $confStats['stats']['dist'][$disk] = 0;
-                }
-                $confStats['stats']['dist'][$disk]++;
-
-                if($obj['hot']){
-                    if(!isset($confStats['stats']['hot'][$disk]) ){
-                        $confStats['stats']['hot'][$disk] = 0;
-                    }
-                    $confStats['stats']['hot'][$disk]++;
-                }
-
-                if($prevDisk !== null){
-
-                    if(!isset($confStats['stats']['moved']['from'][$prevDisk]) ){
-                        $confStats['stats']['moved']['from'][$prevDisk] = 0;
-                    }
-                    $confStats['stats']['moved']['from'][$prevDisk]++;
-
-                    if(!isset($confStats['stats']['moved']['to'][$disk]) ){
-                        $confStats['stats']['moved']['to'][$disk] = 0;
-                    }
-                    $confStats['stats']['moved']['to'][$disk]++;
-
-                }
-            }
+            $clusters['clusters'][] = $clusterData;
         }
 
-        echo( "avg lookup: ".($totalTime/$totalObjs)."\n");
-        print_r( $stats );
+        return $clusters;
     }
-
-*/
-
 }

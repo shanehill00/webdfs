@@ -38,6 +38,8 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 /**
  * Test helper
  */
+require_once dirname(dirname( dirname(__FILE__) )). DIRECTORY_SEPARATOR . 'TestHelper.php';
+
 require_once 'PHPUnit/Framework.php';
 require_once 'PHPUnit/Framework/IncompleteTestError.php';
 require_once 'PHPUnit/Framework/TestCase.php';
@@ -56,7 +58,13 @@ class WebDFS_DataLocator_RUSHpTest extends PHPUnit_Framework_TestCase
     private $data_config = null;
     
     public function setUp(){
-        $this->data_config = require 'cluster_config.php';
+        $numClusters = 2;
+        $nodesPerCluster = 2;
+        $replicaCount = 2;
+        $clusterToWeight = 0;
+        $weight = 1;
+
+        $this->data_config = $this->makeConfig($numClusters, $nodesPerCluster, $replicaCount, $clusterToWeight, $weight);
     }
 
     /**
@@ -146,7 +154,6 @@ class WebDFS_DataLocator_RUSHpTest extends PHPUnit_Framework_TestCase
             $this->assertEquals( count($replicaData), $replicaCount, print_r(array("replica urls are not all unique!", $uuid, $replicaData, $replicaNodes ),1));
 
         }
-        echo("totalTime: $totalTime\navg time per lookup:".($totalTime/($replicaCount * $iterations)));
     }
 
     public function makeConfig($numClusters = 1, $numNodes = 1, $replicationDegree = 1, $clusterToWeight = 0, $weight = 1){
@@ -168,8 +175,6 @@ class WebDFS_DataLocator_RUSHpTest extends PHPUnit_Framework_TestCase
 
             $clusters['clusters'][] = $clusterData;
         }
-
-        //print_r($clusters);
 
         return $clusters;
     }
