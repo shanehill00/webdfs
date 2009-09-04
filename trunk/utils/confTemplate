@@ -1,19 +1,19 @@
 <?php
 return array(
-            // autoMove tells PHPDFS whther or not to automatically move data
+            // autoMove tells WebDFS whther or not to automatically move data
             // when the configs change and a GET cannot find data.
-            // if this value evaluates to true, then whenever PHPDFS cannot find
+            // if this value evaluates to true, then whenever WebDFS cannot find
             // a file for a GET request, it will look in the old location (if there is an old location)
             // and if it can find it there it will move it from the
             // old location to the new location and return the image to the client.
-            // if automove is false then a 404 is returned to the client if PHPDFS
+            // if automove is false then a 404 is returned to the client if WebDFS
             // cannot find the requested file
             'autoMove' => false,
 
             //  the path that the fileinfo extension will use
-            'magicDbPath' => '/home/phpdfs/phpdfs/conf/magic.mgc',
+            'magicDbPath' => '/home/webdfs/webdfs/conf/magic.mgc',
 
-            // this setting will tell PHPDFS to disconnect the client
+            // this setting will tell WebDFS to disconnect the client
             // after key points in propagation of an action.
             //
             // For example we disconnect the client before continung with replicating
@@ -47,26 +47,26 @@ return array(
                 array(
 
                     // The class name of the locator class to be used for this data config
-                    'locatorClassName' => 'PHPDFS_DataLocator_RUSHr',
+                    'locatorClassName' => 'WebDFS_DataLocator_RUSHr',
 
                     // the path to the file that comntains the locatorClassName class code
-                    'locatorClassPath' => 'PHPDFS/DataLocator/RUSHr.php',
+                    'locatorClassPath' => 'WebDFS/DataLocator/RUSHr.php',
 
                     //=========================================================
                     // THE STORAGE AND TEMP ROOTS SHOULD NOT BE THE SAME VALUE
                     //=========================================================
                     // this is the directory where files will be stored permanently
                     // this directory should be writable and readable by the webserver
-                    // this directory needs to be created by you.  PHPDFS will not create it.
-                    'storageRoot' => '/mnt/phpdfs/data',
+                    // this directory needs to be created by you.  WebDFS will not create it.
+                    'storageRoot' => '/mnt/webdfs/data',
 
                     // this is the directory where files will be stored temporarily
                     // for example, when we are accepting an upload, or when we are getting a file
                     // from a remote node to fulfill a GET request.
                     //
                     // this directory should be writable and readable by the webserver
-                    // this directory needs to be created by you.  PHPDFS will not create it.
-                    'tmpRoot' => '/mnt/phpdfs/tmp',
+                    // this directory needs to be created by you.  WebDFS will not create it.
+                    'tmpRoot' => '/mnt/webdfs/tmp',
 
                     // this is the number iof replicants to make
                     // this number CANNOT exceed the number of nodes
