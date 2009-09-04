@@ -29,7 +29,7 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 // this is the file that handles the uploads into the HM RUSH system
 
-require_once("WEbDFS.php");
+require_once("WebDFS.php");
 require_once("WebDFS/Helper.php");
 
 $config = WebDFS_Helper::getConfig();
