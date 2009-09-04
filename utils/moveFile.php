@@ -27,9 +27,9 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 */
 
-set_include_path( get_include_path().':/Users/shane/dev/phpdfs/library');
+set_include_path( get_include_path().':/Users/shane/dev/webdfs/library');
 
-require_once 'PHPDFS.php';
+require_once 'WebDFS.php';
 
 if( !isset( $argv[1] ) ){
     throw new Exception("please include a url");
@@ -38,9 +38,9 @@ if( !isset( $argv[1] ) ){
 $url = $argv[1];
 
 $headers = array();
-$headers[0] = PHPDFS::HEADER_MOVE_CONTEXT.': start';
-$headers[1] = PHPDFS::HEADER_MOVE_CONFIG_INDEX.': 1';
-$headers[2] = PHPDFS::HEADER_CONFIG_INDEX.': 0';
+$headers[0] = WebDFS::HEADER_MOVE_CONTEXT.': start';
+$headers[1] = WebDFS::HEADER_MOVE_CONFIG_INDEX.': 1';
+$headers[2] = WebDFS::HEADER_CONFIG_INDEX.': 0';
 
 $curl = curl_init();
 
