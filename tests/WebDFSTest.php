@@ -130,7 +130,9 @@ class WebDFSTest extends PHPUnit_Framework_TestCase
         $dfs = new WebDFS($this->data_config, $params );
         $dfs->handleRequest();
         $filePath = join('/', array( $this->data_config['data'][0]['storageRoot'], $params['pathHash'], $params['fileName'] ) );
+        chmod( $filePath, 0644 );
         $this->assertFileExists( $filePath );
+        $this->assertFileEquals( $filePath, $data['uri']);
         unlink( $filePath );
         unlink( $data['uri'] );
     }
@@ -152,24 +154,25 @@ class WebDFSTest extends PHPUnit_Framework_TestCase
         $dfs->handleRequest();
         $filePath = join('/', array( $this->data_config['data'][0]['storageRoot'], $params['pathHash'], $params['fileName'] ) );
         $this->assertFileExists( $filePath );
+        chmod( $filePath, 0644 );
 
-        // we have to prevent a failure due to headers already being sent
-        // by phpunit
+
+        // we have to prevent a failure due to headers already being sent by phpunit
         $out = '';
         if(ob_get_length()){
             $out = ob_get_contents();
             ob_end_clean();
-            ob_start();
         }
         
         // now get the file we just put
         $params = $this->getParamsForGet();
+        ob_start();
         $dfs = new WebDFS($this->data_config, $params );
         $dfs->handleRequest();
-
         $out2 = ob_get_contents();
-        $this->assertEquals( strlen($out2), strlen($fileData) );
         ob_end_clean();
+        
+        $this->assertEquals( $out2, $fileData );
         echo( $out );
         unlink( $data['uri'] );
         unlink( $filePath );
