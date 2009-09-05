@@ -21,7 +21,7 @@ class AllTests {
     }
 
     public static function suite(){
-        $suite = new PHPUnit_Framework_TestSuite('WebDFSTest');
+        $suite = new PHPUnit_Framework_TestSuite('WebDFSTest - Test');
 
         $suite->addTestSuite('WebDFSTest');
         $suite->addTest(WebDFS_DataLocator_AllTests::suite());
