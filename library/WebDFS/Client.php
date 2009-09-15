@@ -27,8 +27,6 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 */
 
-require_once('WebDFS/Client.php');
-
 class WebDFS_Client{
 
     /**
@@ -159,9 +157,10 @@ class WebDFS_Client{
             curl_setopt($curl, CURLOPT_INFILE, $fh);
             curl_setopt($curl, CURLOPT_INFILESIZE, $size );
             curl_setopt($curl, CURLOPT_TIMEOUT, 10);
-            curl_setopt($curl, CURLOPT_PUT, 4);
+            curl_setopt($curl, CURLOPT_PUT, true);
             curl_setopt($curl, CURLOPT_URL, $url);
             curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
+            curl_setopt($curl, CURLOPT_HTTPHEADER, array("Content_Length: $size") );
             $response = curl_exec($curl);
             $this->checkError( $curl, self::WebDFS_PUT_ERR, $response );
             fclose($fh);
