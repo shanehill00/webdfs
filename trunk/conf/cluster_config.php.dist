@@ -80,6 +80,18 @@ return array(
             'data' => array(
                 array(
 
+                    // boolean indicating whether or not to use the dio libraries
+                    // regardless if the dio lib exists and is loaded
+                    // if the dio libs are bot prsent then this setting has no effect
+                    'useDio' => false,
+
+                    // boolean indicating whether or not to fsync
+                    // after writing the first replicant
+                    // this setting only has an effect if the
+                    // dio lib is installed and the useDio config setting
+                    // is set to true
+                    'fsync' => false,
+
                     // The class name of the locator class to be used for this data config
                     'locatorClassName' => 'WebDFS_DataLocator_RUSHr',
 

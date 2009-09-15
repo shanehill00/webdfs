@@ -198,8 +198,8 @@ class WebDFS
      *
      * integer value that indicates that
      * we do not have a position in the list
-     * of target nodes.  essentially meaning thatw e are
-     * not a target node.
+     * of target nodes.
+     * essentially meaning that we are not a target node.
      *
      * @var <int>
      */
@@ -211,8 +211,9 @@ class WebDFS
     const HEADER_MOVE_CONTEXT      = 'Webdfs-Move-Context';
     const HEADER_MOVE_CONFIG_INDEX = 'Webdfs-Move-Config-Index';
     const HEADER_CONFIG_INDEX      = 'Webdfs-Config-Index';
+    const HEADER_CONTENT_LENGTH    = 'Content-Length';
 
-    const MOVE_CONTEXT_START = 'start';
+    const MOVE_CONTEXT_START  = 'start';
     const MOVE_CONTEXT_CREATE = 'create';
     const MOVE_CONTEXT_DELETE = 'delete';
 
@@ -261,7 +262,7 @@ class WebDFS
         } else if( $action == 'delete' ){
             $this->deleteData();
 
-        }else if( $action == 'move' ){
+        } else if( $action == 'move' ){
             $this->moveData();
 
         }
@@ -302,7 +303,7 @@ class WebDFS
     }
 
     public function handleMoveDeleteError( $errno, $errmsg, $errfile = "filename not given", $errline = "line number not given", $errcontext = "not given" ){
-        throw new WebDFS_Exception_PutException( "errno: $errno - errmsg: $errmsg - errfile: $errfile - errline: $errline" );
+        throw new WebDFS_Exception_MoveException( "errno: $errno - errmsg: $errmsg - errfile: $errfile - errline: $errline" );
     }
     
     protected function doDeleteForMove(){
@@ -330,7 +331,7 @@ class WebDFS
     }
 
     public function handleMoveCreateError( $errno, $errmsg, $errfile = "filename not given", $errline = "line number not given", $errcontext = "not given" ){
-        throw new WebDFS_Exception_PutException( " $errno : $errmsg : $errfile : $errline " );
+        throw new WebDFS_Exception_MoveException( " $errno : $errmsg : $errfile : $errline " );
     }
     
     /**
@@ -382,7 +383,7 @@ class WebDFS
 
 
     public function handleMoveStartError( $errno, $errmsg, $errfile = "filename not given", $errline = "line number not given", $errcontext = "not given" ){
-        throw new WebDFS_Exception_PutException( " $errno : $errmsg : $errfile : $errline " );
+        throw new WebDFS_Exception_MoveException( " $errno : $errmsg : $errfile : $errline " );
     }
     /**
      *  called when we are in start context for a move operation
@@ -421,11 +422,8 @@ class WebDFS
      * need to add a param to indicate that we want to continue looking for the data
      * if we are not actually a target node.  logically, any client directly
      * asking for data should be able to locate the exact nodes from which
-     * to ask.  So this really should not happen very often (unles someone os making lots of bad requests)
+     * to ask.  So this really should not happen very often (unles someone is making lots of bad requests)
      * and might even be indicative a problem.  we do not really have a way to tell if it denotes a prob or not
-     *
-     * what we do need is a check to be sure that we are not a target anyway so we can throw an error
-     * if the data is supposed to be here. ah but wait we might not have the data
      */
     public function getData(){
         $filePath = $this->finalPath;
@@ -611,18 +609,53 @@ class WebDFS
 
     /*
      * get the data from stdin and put it in a temp file
-     * we use the dio functions as they are much faster
-     * than file_put_contents on big files (1mb+)
      *
+     * we use the dio functions if configured to do so
+     * as they are much faster than file_put_contents on big files (1mb+)
+     *
+     * we use file_put_contents if the dio libs are not available
      */
     protected function spoolData( ){
         // write stdin to a temp file
-        $putData = fopen($this->config['inputStream'], "rb");
-        $fd = dio_open($this->tmpPath, O_CREAT | O_NONBLOCK | O_WRONLY );
-        while( $data = fread($putData, $this->config['spoolReadSize'] ) ){
-            dio_write($fd, $data);
+        $input = fopen($this->config['inputStream'], "rb");
+        
+        if( extension_loaded( 'dio' )
+              && isset( $this->dataConfig['useDio'] )
+                && $this->dataConfig['useDio'] )
+        {
+            $fd = dio_open($this->tmpPath, O_CREAT | O_NONBLOCK | O_WRONLY );
+            $totalWritten = 0;
+            while( $data = fread( $input, $this->config['spoolReadSize'] ) ){
+                $totalWritten += dio_write( $fd, $data );
+            }
+
+            // make a check that we wrote all of the data that we expected to write
+            // if not throw an exception
+            if( isset( $this->params['contentLength'] )
+                  && ($this->params['contentLength'] > 0)
+                    && ($this->params['contentLength'] != $totalWritten) )
+            {
+                dio_close( $fd );
+                unlink( $this->tmpPath );
+                throw new WebDFS_Exception_PutException("Did not write all data!  Expected: [".$this->params['contentLength']."] Got: [ $totalWritten ]");
+            }
+            if( function_exists("dio_fsync")
+                  && isset( $this->dataConfig['fsync'] )
+                    && $this->dataConfig['fsync'] )
+            {
+                dio_fsync( $fd );
+            }
+            dio_close( $fd );
+        } else {
+            $totalWritten = file_put_contents($this->tmpPath, $input);
+            if( isset( $this->params['contentLength'] )
+                  && ($this->params['contentLength'] > 0)
+                    && ($this->params['contentLength'] != $totalWritten) )
+            {
+                unlink( $this->tmpPath );
+                throw new WebDFS_Exception_PutException("Did not write all data!  Expected: [".$this->params['contentLength']."] Got: [ $totalWritten ]");
+            }
         }
-        dio_close($fd);
     }
 
     /**

@@ -117,6 +117,10 @@ class WebDFS_Helper {
             if( isset( $headers[ WebDFS::HEADER_GET_CONTEXT ] ) ){
                 $params['getContext'] = $headers[ WebDFS::HEADER_GET_CONTEXT ];
             }
+
+            if( isset( $headers[ WebDFS::HEADER_CONTENT_LENGTH ] ) ){
+                $params['contentLength'] = (int) $headers[ WebDFS::HEADER_CONTENT_LENGTH ];
+            }
         }
         return $params;
     }
