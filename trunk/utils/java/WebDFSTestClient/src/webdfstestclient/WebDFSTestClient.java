@@ -221,6 +221,8 @@ public class WebDFSTestClient extends Thread {
         FileRequestEntity fre = new FileRequestEntity(file, type);
         method.setRequestEntity(fre);
 
+        method.addRequestHeader("Content_Length", Long.toString( file.length() ) );
+
         // Provide custom retry handler is necessary
         method.getParams().setParameter(HttpMethodParams.RETRY_HANDLER,
             new DefaultHttpMethodRetryHandler(1, false));
@@ -573,8 +575,8 @@ public class WebDFSTestClient extends Thread {
         long sleep = 0;
         int threads = 1;
         long bytesToUploadPerThread = 20480000L;
-        String filesToUpload = "/Users/shane/dev/phpdfs/utils/filesToUpload";
-        String baseUrls = "/Users/shane/dev/phpdfs/utils/baseUrls";
+        String filesToUpload = "/Users/shane/dev/webdfs/utils/filesToUpload";
+        String baseUrls = "/Users/shane/dev/webdfs/utils/baseUrls";
         long uploadWait = 0;
 
         if( args.length == 7 ){

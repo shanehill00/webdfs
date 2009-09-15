@@ -111,7 +111,7 @@ class WebDFSTest extends PHPUnit_Framework_TestCase
     }
     
     public function setUp(){
-        $this->data_config = require 'cluster_config.php';
+        $this->data_config = require './cluster_config.php';
     }
 
     /**
@@ -159,7 +159,7 @@ class WebDFSTest extends PHPUnit_Framework_TestCase
 
         // we have to prevent a failure due to headers already being sent by phpunit
         $out = '';
-        if(ob_get_length()){
+        if( ob_get_length() ){
             $out = ob_get_contents();
             ob_end_clean();
         }
@@ -171,8 +171,8 @@ class WebDFSTest extends PHPUnit_Framework_TestCase
         $dfs->handleRequest();
         $out2 = ob_get_contents();
         ob_end_clean();
-        
         $this->assertEquals( $out2, $fileData );
+
         echo( $out );
         unlink( $data['uri'] );
         unlink( $filePath );
