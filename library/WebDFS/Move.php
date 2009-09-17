@@ -70,7 +70,8 @@ class WebDFS_Move extends WebDFS{
     }
 
     public function handleMoveDeleteError( $errno, $errmsg, $errfile = "filename not given", $errline = "line number not given", $errcontext = "not given" ){
-        throw new WebDFS_Exception_MoveException( "errno: $errno - errmsg: $errmsg - errfile: $errfile - errline: $errline" );
+        $msg = sprintf( $this->config['exceptionMsgs']['handleMoveDeleteError'], $errno , $errmsg , $errfile , $errline );
+        throw new WebDFS_Exception_MoveException( $msg );
     }
 
     protected function doDeleteForMove(){
@@ -98,7 +99,8 @@ class WebDFS_Move extends WebDFS{
     }
 
     public function handleMoveCreateError( $errno, $errmsg, $errfile = "filename not given", $errline = "line number not given", $errcontext = "not given" ){
-        throw new WebDFS_Exception_MoveException( " $errno : $errmsg : $errfile : $errline " );
+        $msg = sprintf( $this->config['exceptionMsgs']['handleMoveCreateError'], $errno , $errmsg , $errfile , $errline );
+        throw new WebDFS_Exception_MoveException( $msg );
     }
 
     /**
@@ -148,9 +150,9 @@ class WebDFS_Move extends WebDFS{
         restore_error_handler();
     }
 
-
     public function handleMoveStartError( $errno, $errmsg, $errfile = "filename not given", $errline = "line number not given", $errcontext = "not given" ){
-        throw new WebDFS_Exception_MoveException( " $errno : $errmsg : $errfile : $errline " );
+        $msg = sprintf( $this->config['exceptionMsgs']['handleMoveStartError'], $errno , $errmsg , $errfile , $errline );
+        throw new WebDFS_Exception_MoveException( $msg );
     }
     /**
      *  called when we are in start context for a move operation
@@ -382,7 +384,7 @@ class WebDFS_Move extends WebDFS{
                 curl_close($curl);
                 fclose($fh);
             } else {
-                $msg = "received command in start context to move ".$this->params['name']." but cannot find file!";
+                $msg = sprintf($this->config['exceptionMsgs']['sendDataToStartMoveNoFile'],$this->params['name']);
                 error_log($msg);
                 throw new WebDFS_Exception_MoveException($msg);
             }
