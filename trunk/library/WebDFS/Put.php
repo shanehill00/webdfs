@@ -36,11 +36,13 @@ class WebDFS_Put extends WebDFS{
     }
     
     public function handleSpoolError( $errno, $errmsg, $errfile = "filename not given", $errline = "line number not given", $errcontext = "not given" ){
-        throw new WebDFS_Exception_PutException( "errno: $errno - errmsg: $errmsg - errfile: $errfile - errline: $errline" );
+        $msg = sprintf( $this->config['exceptionMsgs']['handleSpoolError'], $errno , $errmsg , $errfile , $errline );
+        throw new WebDFS_Exception_PutException( $msg );
     }
 
     public function handleForwardDataError( $errno, $errmsg, $errfile = "filename not given", $errline = "line number not given", $errcontext = "not given" ){
-        throw new WebDFS_Exception_PutException( "errno: $errno - errmsg: $errmsg - errfile: $errfile - errline: $errline" );
+        $msg = sprintf( $this->config['exceptionMsgs']['handleForwardDataError'], $errno , $errmsg , $errfile , $errline );
+        throw new WebDFS_Exception_PutException( $msg );
     }
     
     public function handle(){

@@ -201,4 +201,39 @@ return array(
                 'noNodeFound'  => "function: %s - file: %s - line: %s - iterated all of the nodes and could not find a good one.  maybe your configuration is bad. be sure to check all of the proxy urls and make sure they are correct",
             ),
 
+            'exceptionMsgs' => array(
+                'incompleteWrite' => "Did not write all data!  Expected: [%s] Got: [ %s ]",
+                'failedRename' => "final move operation failed when copying %s to %s",
+                'failedUnlink' => "could not unlink %s",
+                'handleDeleteDataError' => "%s : %s : $%s : %s",
+                'handleForwardDeleteError' => "%s : %s : $%s : %s",
+                'handleMoveDeleteError' => "%s : %s : $%s : %s",
+                'handleMoveCreateError' => "%s : %s : $%s : %s",
+                'handleMoveStartError' => "%s : %s : $%s : %s",
+                'sendDataToStartMoveNoFile' => "received command in start context to move %s but cannot find file!",
+                'handleSpoolError' => "errno: %s - errmsg: %s - errfile: %s - errline: %s",
+                'handleForwardDataError' => "errno: %s - errmsg: %s - errfile: %s - errline: %s",
+            ),
+
+            'reqMethodSettings' => array(
+                'get' => array(
+                    'require' => 'WebDFS/Get.php',
+                    'class' => 'WebDFS_Get',
+                ),
+
+                'put' =>  array(
+                    'require' => 'WebDFS/Put.php',
+                    'class' => 'WebDFS_Put',
+                ),
+
+                'delete' => array(
+                    'require' => 'WebDFS/Delete.php',
+                    'class' => 'WebDFS_Delete',
+                ),
+
+                'move' => array(
+                    'require' => 'WebDFS/Move.php',
+                    'class' => 'WebDFS_Move',
+                )
+            ),
         );

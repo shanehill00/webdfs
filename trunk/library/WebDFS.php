@@ -92,7 +92,6 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 require_once 'WebDFS/Helper.php';
 require_once 'WebDFS/Exception.php';
-require_once 'WebDFS/Exception/MoveException.php';
 
 class WebDFS
 {
@@ -191,7 +190,7 @@ class WebDFS
      * @var <array> 
      */
     protected $errMsgs = null;
-    
+
     /**
      *
      * integer value that indicates that
@@ -228,7 +227,7 @@ class WebDFS
         $this->params = $params;
         // the configIndex tells us which config to use for this request
         // it is initially passed to us via the header Webdfs-Config-Index
-        // we need this value because we need to hve a "history" of configs to
+        // we need this value because we need to have a "history" of configs to
         // accommodate automatic movement of data.
         $configIndex = $this->params['configIndex'];
         $this->dataConfig = $this->config['data'][ $configIndex ];
@@ -248,28 +247,11 @@ class WebDFS
         $this->tmpPath = join( $pathSeparator, array($this->dataConfig['tmpRoot'], uuid_create() ));
     }
 
-
     public function handleRequest(){
-        $action = $this->params['action'];
+        $actionParams = $this->config[ 'reqMethodSettings' ][ $this->params['action'] ];
+        require_once( $actionParams['require'] );
+        $class = $actionParams['class'];
         
-        if( $action == 'get' ){
-            $require = 'WebDFS/Get.php';
-            $class = 'WebDFS_Get';
-
-        } else if( $action == 'put' ){
-            $require = 'WebDFS/Put.php';
-            $class = 'WebDFS_Put';
-
-        } else if( $action == 'delete' ){
-            $require = 'WebDFS/Delete.php';
-            $class = 'WebDFS_Delete';
-
-        } else if( $action == 'move' ){
-            $require = 'WebDFS/Move.php';
-            $class = 'WebDFS_Move';
-
-        }
-        require_once $require;
         $action = new $class( $this->config, $this->params );
         $action->handle();
     }
@@ -304,7 +286,8 @@ class WebDFS
             {
                 dio_close( $fd );
                 unlink( $this->tmpPath );
-                throw new WebDFS_Exception("Did not write all data!  Expected: [".$this->params['contentLength']."] Got: [ $totalWritten ]");
+                $msg = sprintf( $this->config['exceptionMsgs']['incompleteWrite'], $this->params['contentLength'], $totalWritten );
+                throw new WebDFS_Exception( $msg );
             }
             // call fsync if:
             //   we are configured to do so
@@ -328,7 +311,8 @@ class WebDFS
                     && ($this->params['contentLength'] != $totalWritten) )
             {
                 unlink( $this->tmpPath );
-                throw new WebDFS_Exception("Did not write all data!  Expected: [".$this->params['contentLength']."] Got: [ $totalWritten ]");
+                $msg = sprintf( $this->config['exceptionMsgs']['incompleteWrite'], $this->params['contentLength'], $totalWritten );
+                throw new WebDFS_Exception( $msg );
             }
         }
     }
@@ -342,13 +326,16 @@ class WebDFS
                 if( !file_exists( $this->finalDir ) ){
                     // suppress any probs in case someone
                     // else is making this directory
-                    @mkdir( $this->finalDir, 0755, true );
+                    if(!@mkdir( $this->finalDir, 0755, true )){
+                        $this->debugLog('apcMkdir', $this->finalDir );
+                    }
                 }
             }
 
             if(  !rename( $this->tmpPath, $this->finalPath ) ){
-                // throw exception if the copy failed
-                throw new WebDFS_Exception("final move operation failed when copying ".$this->tmpPath." to ".$this->finalPath );
+                // throw exception if the rename failed
+                $msg = sprintf($this->config['exceptionMsgs']['failedRename'],$this->tmpPath, $this->finalPath);
+                throw new WebDFS_Exception( $msg  );
             }
         }
     }
@@ -366,7 +353,8 @@ class WebDFS
             $deleted = unlink( $this->finalPath );
             if( !$deleted ){
                 // throw exception if the delete failed
-                throw new WebDFS_Exception("could not unlink ".$this->finalPath);
+                $msg = sprintf($this->config['exceptionMsgs']['failedUnlink'],$this->finalPath);
+                throw new WebDFS_Exception($msg);
             }
         }
     }
@@ -377,7 +365,10 @@ class WebDFS
             if( !file_exists( $this->finalDir ) ){
                 // suppress any probs in case someone
                 // else is making this directory
-                @mkdir( $this->finalDir, 0755, true );
+
+                if(!@mkdir( $this->finalDir, 0755, true )){
+                    $this->debugLog('apcMkdir', $this->finalDir );
+                }
             }
             apc_store( $this->finalDir, 1 );
         }

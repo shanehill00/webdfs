@@ -36,11 +36,13 @@ class WebDFS_Delete extends WebDFS{
     }
     
     public function handleDeleteDataError( $errno, $errmsg, $errfile = "filename not given", $errline = "line number not given", $errcontext = "not given" ){
-        throw new WebDFS_Exception_DeleteException( " $errno : $errmsg : $errfile : $errline " );
+        $msg = sprintf( $this->config['exceptionMsgs']['handleDeleteDataError'], $errno , $errmsg , $errfile , $errline );
+        throw new WebDFS_Exception_DeleteException( $msg );
     }
 
     public function handleForwardDeleteError( $errno, $errmsg, $errfile = "filename not given", $errline = "line number not given", $errcontext = "not given" ){
-        throw new WebDFS_Exception_DeleteException( " $errno : $errmsg : $errfile : $errline " );
+        $msg = sprintf( $this->config['exceptionMsgs']['handleForwardDeleteError'], $errno , $errmsg , $errfile , $errline );
+        throw new WebDFS_Exception_DeleteException( $msg );
     }
 
     public function handle(){
