@@ -267,7 +267,8 @@ class WebDFS
     protected function spoolData( ){
         // write stdin to a temp file
         $input = fopen($this->config['inputStream'], "rb");
-        
+        stream_set_blocking($input, 0);
+
         if( extension_loaded( 'dio' )
               && isset( $this->dataConfig['useDio'] )
                 && $this->dataConfig['useDio'] )
@@ -304,6 +305,7 @@ class WebDFS
                 dio_fsync( $fd );
             }
             dio_close( $fd );
+            fclose( $input );
         } else {
             $totalWritten = file_put_contents($this->tmpPath, $input);
             if( isset( $this->params['contentLength'] )
@@ -318,25 +320,22 @@ class WebDFS
     }
 
     protected function saveData( ){
-        if(  $this->iAmATarget( ) ){
-
-            if( extension_loaded("apc") ){
-                $this->apcMkdir();
-            } else {
-                if( !file_exists( $this->finalDir ) ){
-                    // suppress any probs in case someone
-                    // else is making this directory
-                    if(!@mkdir( $this->finalDir, 0755, true )){
-                        $this->debugLog('apcMkdir', $this->finalDir );
-                    }
+        if( extension_loaded("apc") ){
+            $this->apcMkdir();
+        } else {
+            if( !file_exists( $this->finalDir ) ){
+                // suppress any probs in case someone
+                // else is making this directory
+                if(!@mkdir( $this->finalDir, 0755, true )){
+                    $this->debugLog('apcMkdir', $this->finalDir );
                 }
             }
+        }
 
-            if(  !rename( $this->tmpPath, $this->finalPath ) ){
-                // throw exception if the rename failed
-                $msg = sprintf($this->config['exceptionMsgs']['failedRename'],$this->tmpPath, $this->finalPath);
-                throw new WebDFS_Exception( $msg  );
-            }
+        if(  !rename( $this->tmpPath, $this->finalPath ) ){
+            // throw exception if the rename failed
+            $msg = sprintf($this->config['exceptionMsgs']['failedRename'],$this->tmpPath, $this->finalPath);
+            throw new WebDFS_Exception( $msg  );
         }
     }
 
