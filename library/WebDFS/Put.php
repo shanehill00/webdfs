@@ -125,12 +125,18 @@ class WebDFS_Put extends WebDFS{
         if( $forwardInfo ){
             $fh = fopen($filePath, "rb");
             stream_set_blocking($fh, 0);
-            
+
+            // check to see if the passed path is a plain file
+            // or something else.
+            // if it is something ele we assume that the
+            // $this->params['contentLength'] holds the correct data size
+            // otherwise we get the file size using the filesize function
+
             $sdata = stream_get_meta_data($fh);
-            if( strtolower( $sdata['stream_type'] ) == 'input' ){
-                $size = $this->params['contentLength'];
-            } else {
+            if( strtolower( $sdata['stream_type'] ) == 'plainfile' ){
                 $size = filesize( $filePath );
+            } else {
+                $size = $this->params['contentLength'];
             }
             
             $errNo = 0;
