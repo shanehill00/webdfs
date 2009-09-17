@@ -46,25 +46,27 @@ class WebDFS_Put extends WebDFS{
     }
     
     public function handle(){
-        set_error_handler( array( $this, "handleSpoolError") );
-        try{
-            // get the data from stdin and put it in a temp file
-            // we will disconnect the client at this point if we are configured to do so
-            // otherwise we hang on to the client, which in most cases is really bad
-            // because you might stay connected until the replication chain is completed
-            $this->spoolData( );
+        if( $this->iAmATarget() ){
+            set_error_handler( array( $this, "handleSpoolError") );
+            try{
+                // get the data from stdin and put it in a temp file
+                // we will disconnect the client at this point if we are configured to do so
+                // otherwise we hang on to the client, which in most cases is really bad
+                // because you might stay connected until the replication chain is completed
+                $this->spoolData( );
 
-            // save the data to the appropriate directory and remove the spooled file
-            // but only if we are a targetNode, otherwise DO NOTHING
-            $this->saveData( );
-        } catch( WebDFS_Exception_PutException $e ){
-            $this->errorLog('putData', $this->params['action'], $this->params['name'], $e->getMessage(), $e->getTraceAsString() );
-            WebDFS_Helper::send500();
-            // we want to be sure to exit here because we have errored
-            // and the state of the file upload is unknown
-            exit();
+                // save the data to the appropriate directory and remove the spooled file
+                // but only if we are a targetNode, otherwise DO NOTHING
+                $this->saveData( );
+            } catch( WebDFS_Exception_PutException $e ){
+                $this->errorLog('putData', $this->params['action'], $this->params['name'], $e->getMessage(), $e->getTraceAsString() );
+                WebDFS_Helper::send500();
+                // we want to be sure to exit here because we have errored
+                // and the state of the file upload is unknown
+                exit();
+            }
+            restore_error_handler();
         }
-        restore_error_handler();
 
         // forward the data on to the next node
         // the reasons for forwarding are:
@@ -92,11 +94,11 @@ class WebDFS_Put extends WebDFS{
             // disconnect the client before we start
             // replicating since we are a storage node
             // and already have the file
-            WebDFS_Helper::disconnectClient($targetNodes, $this->params['fileName']);
+            WebDFS_Helper::disconnectClient( $targetNodes, $this->params['fileName'] );
             $this->sendDataForPut( $this->finalPath );
         } else {
-            $this->sendDataForPut( $this->tmpPath );
-            unlink( $this->tmpPath );
+            $this->sendDataForPut( $this->config['inputStream'] );
+            // unlink( $this->tmpPath );
             // disconnect only after we have
             // uploaded the file to the first
             // storage target node
@@ -122,9 +124,15 @@ class WebDFS_Put extends WebDFS{
         $forwardInfo = $this->getForwardInfo( );
         if( $forwardInfo ){
             $fh = fopen($filePath, "rb");
-            $size = filesize( $filePath );
-            rewind($fh);
-
+            stream_set_blocking($fh, 0);
+            
+            $sdata = stream_get_meta_data($fh);
+            if( strtolower( $sdata['stream_type'] ) == 'input' ){
+                $size = $this->params['contentLength'];
+            } else {
+                $size = filesize( $filePath );
+            }
+            
             $errNo = 0;
             $origPosition = $forwardInfo['position'];
             $curl = curl_init();
