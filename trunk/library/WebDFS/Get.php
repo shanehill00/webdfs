@@ -34,7 +34,7 @@ class WebDFS_Get extends WebDFS{
     public function __construct( $config, $params ){
         parent::__construct($config, $params);
     }
-    
+
     /**
      * handle a GET. Since any node can handle a GET request, we need to gracefully handle misses.
      * the algorithm follows
@@ -92,7 +92,7 @@ class WebDFS_Get extends WebDFS{
      *
      * The self healing process is initiated when we have been asked for some data that is supposedly
      * stored on our disk and we cannot find it.
-     * 
+     *
      * When we are asked to fetch data that is supposedly stored on our disk, one of the following things can be true:
      *
      *      1) The data never was put on disk and this is simply servicing a request for data that is non-existent
@@ -100,13 +100,13 @@ class WebDFS_Get extends WebDFS{
      *           this could change if we start keeping a partial index in memory of what is supposedly on the disk. )
      *
      *      2) For some reason, the data is missing or corrupted and we need to heal ourselves
-     * 
+     *
      *      3) New servers and disks have been added to the cluster configuration and we are performing
      *         an auto move operation
-     * 
+     *
      * Currently, we have to assume that we "might" or "probably" have been asked to store the data
      * at some point in the past. Therefore we are forced to search for the data before we return a 404 to the client
-     * 
+     *
      * heal is the function that fecthes the file from a peer server
      * and then saves it to the temp path.
      *
@@ -127,14 +127,14 @@ class WebDFS_Get extends WebDFS{
      *      If we cannot find that data at all;
      *          remove the tempfile
      *          we send a "404 not found" message back to the client
-     * 
+     *
      * endif
      *
      */
 
     protected function selfHeal(){
         $filename = $this->params['name'];
-        
+
         $tmpPath = $this->tmpPath;
         $fd = fopen( $tmpPath, "wb+" );
         if( !$fd ){
@@ -185,17 +185,7 @@ class WebDFS_Get extends WebDFS{
                     curl_exec($curl);
                     $info = curl_getinfo($curl);
                     if( !curl_errno($curl) && $info['http_code'] < 400 ){
-                        // need to  check to see if we wrote all of the data
-                        // as dictated by the content length headeer
-                        // and we need to fsync if configured to do so
-                        $fileSize = filesize( $tmpPath );
-                        if( $fileSize != $info['download_content_length'] ){
-                            fclose( $fd );
-                            unlink( $tmpPath );
-                            $msg = sprintf( $this->config['exceptionMsgs']['incompleteWrite'], $info['download_content_length'], $fileSize );
-                            throw new WebDFS_Exception( $msg );
-                        }
-                        $this->fsync( $fd );
+                        fclose( $fd );
                         $copiedFrom = $node;
                         $this->debugLog('autoMove');
                         $healed = true;
@@ -221,12 +211,19 @@ class WebDFS_Get extends WebDFS{
             unlink( $tmpPath );
             WebDFS_Helper::send404( $this->params['name'] );
         } else if( $healed ){
-            fclose( $fd );
+            // need to  check to see if we wrote all of the data
+            // as dictated by the content length headeer
+            $fileSize = filesize( $tmpPath );
+            if( $fileSize != $info['download_content_length'] ){
+                unlink( $tmpPath );
+                $msg = sprintf( $this->config['exceptionMsgs']['incompleteWrite'], $info['download_content_length'], $fileSize );
+                throw new WebDFS_Exception( $msg );
+            }
             $this->saveData();
             $this->sendFile();
             // here we check if the source from where we copied
             // is included in the the current target node list
-            $position = $this->getTargetNodePosition( $nodes, $copiedFrom['proxyUrl'] );
+            $position = $this->getTargetNodePosition( null, $copiedFrom['proxyUrl'] );
             if( $position == WebDFS::POSITION_NONE ){
                 $this->sendDelete( $copiedFrom['proxyUrl'].'/'.$filename );
             }
@@ -242,7 +239,7 @@ class WebDFS_Get extends WebDFS{
      */
     protected function sendDelete( $url ){
         $opts = array(
-            CURLOPT_HTTPHEADER => array(WebDFS::HEADER_PROPAGATE_DELETE.': 0'),
+            CURLOPT_HTTPHEADER => array(WebDFS::HEADER_PROPAGATE_DELETE.': 0',WebDFS::HEADER_FORCE_DELETE.': 1'),
             CURLOPT_TIMEOUT => 10,
             CURLOPT_CUSTOMREQUEST => "DELETE",
             CURLOPT_RETURNTRANSFER => true,
