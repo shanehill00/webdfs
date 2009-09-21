@@ -220,7 +220,7 @@ class WebDFS_Get extends WebDFS{
             fclose( $fd );
             unlink( $tmpPath );
             WebDFS_Helper::send404( $this->params['name'] );
-        } else if( $fileSize > 0 ){
+        } else if( $healed ){
             fclose( $fd );
             $this->saveData();
             $this->sendFile();
