@@ -201,7 +201,7 @@ return array(
                 'noNodeFound'  => "ERROR: function: %s - file: %s - line: %s - iterated all of the nodes and could not find a good one.  maybe your configuration is bad. be sure to check all of the proxy urls and make sure they are correct",
                 'selfHealNoFile'  => "ERROR: could not open file %s when attempting to self heal",
                 'delete500'       => "error when processing delete command",
-                'selfHeal'       => "ERROR: something bad happened during a self healing process.  %s",
+                'selfHeal'       => "ERROR: something bad happened during a self healing process.  %s, %s",
             ),
 
             'exceptionMsgs' => array(

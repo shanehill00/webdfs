@@ -66,7 +66,7 @@ class WebDFS_Get extends WebDFS{
                 try{
                     $this->selfHeal();
                 } catch( Exception $e ){
-                    $this->errorLog('selfHeal', $e->getTraceAsString() );
+                    $this->errorLog('selfHeal', $e->getMessage(), $e->getTraceAsString() );
                     WebDFS_Helper::send500();
                 }
             } else {
