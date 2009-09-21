@@ -76,7 +76,7 @@ class WebDFS_Get extends WebDFS{
             // get the paths, choose one, and print a 301 redirect
             $nodes = $this->getTargetNodes();
             if( $nodes ){
-                WebDFS_Helper::send301( $nodes[ 0 ]['staticUrl'].'/'.$this->params['name'] );
+                WebDFS_Helper::send301( join('/',array($nodes[ 0 ]['staticUrl'],$this->params['pathHash'],$this->params['name'] ) ) );
             }
         }
     }
@@ -180,7 +180,7 @@ class WebDFS_Get extends WebDFS{
                 // in which case we do not want to make a request as that
                 // would be wasted resources and pointless
                 if( $node['proxyUrl'] != $this->config['thisProxyUrl'] ){
-                    $url = $node['staticUrl'].'/'.urlencode($filename);
+                    $url = join('/',array($node['staticUrl'],$this->params['pathHash'],$filename) );
                     curl_setopt($curl, CURLOPT_URL, $url);
                     curl_exec($curl);
                     $info = curl_getinfo($curl);
@@ -239,7 +239,6 @@ class WebDFS_Get extends WebDFS{
      * We need to be sure to include the Webdfs-Propagate-Delete
      * header with a value of 0 as we do not want the delete command to propagate.
      *
-     * here
      */
     protected function sendDelete( $url ){
         $opts = array(
