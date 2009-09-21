@@ -84,6 +84,9 @@ class WebDFS_Put extends WebDFS{
         } catch( WebDFS_Exception_PutException $e ){
             $this->errorLog('putForward', $this->params['action'], $this->params['name'], $e->getMessage(), $e->getTraceAsString() );
             WebDFS_Helper::send500();
+        } catch( WebDFS_Exception $e ){
+            $this->errorLog('putForward', $this->params['action'], $this->params['name'], $e->getMessage(), $e->getTraceAsString() );
+            WebDFS_Helper::send500();
         }
         restore_error_handler();
     }
@@ -126,17 +129,19 @@ class WebDFS_Put extends WebDFS{
             $fh = fopen($filePath, "rb");
             stream_set_blocking($fh, 0);
 
-            // check to see if the passed path is a plain file
-            // or something else.
-            // if it is something ele we assume that the
+            // check to see if the passed path is a plain file or something else.
+            // if it is something else we assume that the
             // $this->params['contentLength'] holds the correct data size
             // otherwise we get the file size using the filesize function
 
             $sdata = stream_get_meta_data($fh);
             if( strtolower( $sdata['stream_type'] ) == 'plainfile' ){
                 $size = filesize( $filePath );
-            } else {
+            } else if(isset($this->params['contentLength'])){
                 $size = $this->params['contentLength'];
+            } else {
+                $msg = sprintf( $this->config['exceptionMsgs']['sendDataForPut'], $filePath );
+                throw new WebDFS_Exception_PutException( $msg );
             }
             
             $errNo = 0;

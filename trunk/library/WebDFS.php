@@ -126,7 +126,7 @@ class WebDFS
     protected $locator = null;
 
     /**
-     * caller inout for things like
+     * caller input for things like
      * file name, data directories
      * temp storage directories, etc
      *
@@ -167,7 +167,7 @@ class WebDFS
     protected $targetNodes = null;
 
     /**
-     * boolean inducating whther or not to log
+     * boolean indicating whether or not to log
      * debug messages.  primarily useful for
      * watching how a file propagates through the nodes
      *
@@ -209,6 +209,7 @@ class WebDFS
     const HEADER_MOVE_CONFIG_INDEX = 'Webdfs-Move-Config-Index';
     const HEADER_CONFIG_INDEX      = 'Webdfs-Config-Index';
     const HEADER_CONTENT_LENGTH    = 'Content-Length';
+    const HEADER_PROPAGATE_DELETE  = 'Webdfs-Propagate-Delete';
 
     const MOVE_CONTEXT_START  = 'start';
     const MOVE_CONTEXT_CREATE = 'create';
@@ -295,15 +296,7 @@ class WebDFS
             //   the fsync function exists
             //   we are a target storage node for the data
             //   and this is the first replica to be created
-            if( function_exists("dio_fsync")
-                  && isset( $this->dataConfig['fsync'] )
-                    && $this->dataConfig['fsync']
-                      && $this->iAmATarget()
-                        && ($this->params['replica'] == 0)
-            )
-            {
-                dio_fsync( $fd );
-            }
+            $this->fsync( $fd );
             dio_close( $fd );
             fclose( $input );
         } else {
@@ -319,19 +312,25 @@ class WebDFS
         }
     }
 
-    protected function saveData( ){
-        if( extension_loaded("apc") ){
-            $this->apcMkdir();
-        } else {
-            if( !file_exists( $this->finalDir ) ){
-                // suppress any probs in case someone
-                // else is making this directory
-                if(!@mkdir( $this->finalDir, 0755, true )){
-                    $this->debugLog('apcMkdir', $this->finalDir );
-                }
-            }
+    protected function fsync( $fd ){
+        // call fsync if:
+        //   we are configured to do so
+        //   the fsync function exists
+        //   we are a target storage node for the data
+        //   and this is the first replica to be created
+        if( function_exists("dio_fsync")
+              && isset( $this->dataConfig['fsync'] )
+                && $this->dataConfig['fsync']
+                  && $this->iAmATarget()
+                    && ($this->params['replica'] == 0)
+        )
+        {
+            dio_fsync( $fd );
         }
+    }
 
+    protected function saveData( ){
+        $this->makeDir( $this->finalDir );
         if(  !rename( $this->tmpPath, $this->finalPath ) ){
             // throw exception if the rename failed
             $msg = sprintf($this->config['exceptionMsgs']['failedRename'],$this->tmpPath, $this->finalPath);
@@ -340,7 +339,27 @@ class WebDFS
     }
 
     /**
-     * this wher we unlink the file from the fs
+     * created the necessary storage directory if not yet existent
+     */
+     protected function makeDir( $dir = null ){
+        if( is_null($dir)){
+            $dir = $this->finalDir;
+        }
+        if( extension_loaded("apc") ){
+            $this->apcMkdir();
+        } else {
+            if( !file_exists( $dir ) ){
+                // suppress any probs in case someone
+                // else is making this directory
+                if(!@mkdir( $dir, 0755, true )){
+                    $this->debugLog('apcMkdir', $dir );
+                }
+            }
+        }
+     }
+
+    /**
+     * this is where we unlink the file from the fs
      * we want to prevent the errors from
      * killing the process here as we might
      * receive erroneous delete requests and it
@@ -487,5 +506,37 @@ class WebDFS
         $args[0] = $this->errMsgs[ $key ];
         $msg = call_user_func_array( "sprintf", $args );
         error_log( $msg );
+    }
+
+    /**
+     * return a boolean indicating whether or not auto move is enabled
+     * 
+     * @return <boolean>
+     */
+    protected function canSelfHeal(){
+        return (isset( $this->config['autoMove'] ) && $this->config['autoMove'] && $this->params['getContext'] != self::GET_CONTEXT_AUTOMOVE);
+    }
+
+
+    protected function sendFile( $filePath = null ){
+        if( is_null( $filePath ) ){
+            $filePath = $this->finalPath;
+        }
+        $dataFH = fopen( $filePath, "rb" );
+        if( $dataFH ){
+
+            $finfo = finfo_open( FILEINFO_MIME, $this->config["magicDbPath"] );
+            $contentType = finfo_file( $finfo, $filePath );
+            finfo_close( $finfo );
+
+            rewind( $dataFH );
+            header( "Content-Type: $contentType");
+            header( "Content-Length: ".filesize( $filePath ) );
+            fpassthru( $dataFH );
+            fclose( $dataFH );
+
+        } else {
+            WebDFS_Helper::send404( $this->params['name'] );
+        }
     }
 }
