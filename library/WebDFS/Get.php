@@ -36,52 +36,39 @@ class WebDFS_Get extends WebDFS{
     }
     
     /**
-     * need to add a param to indicate that we want to continue looking for the data
-     * if we are not actually a target node.  logically, any client directly
-     * asking for data should be able to locate the exact nodes from which
-     * to ask.  So this really should not happen very often (unles someone is making lots of bad requests)
-     * and might even be indicative a problem.  we do not really have a way to tell if it denotes a prob or not
+     * handle a GET. Since any node can handle a GET request, we need to gracefully handle misses.
+     * the algorithm follows
+     *
+     * ("target storage node" and "target node" refer to a node that is supposed to store the requested data)
+     *
+     * if we are NOT a target storage node for the file being requested
+     *      send a redirect to a node that supposedly contains the data
+     *
+     * else if we are a target storage node
+     *      if we contain the file
+     *          send the file to the client
+     *      else if we do not contain the file we might need to self heal
+     *          if we are configured to self heal
+     *              call the self healing function (described below)
+     *          else
+     *              send a 404 to the client
+     *          endif
+     *      endif
+     * endif
+     *
      */
     public function handle(){
-        $filePath = $this->finalPath;
-        $config = $this->dataConfig;
         $iAmATarget = $this->iAmATarget();
         if( $iAmATarget ){
-            $dataFH = '';
-            if( file_exists( $filePath) ){
-                $dataFH = fopen( $filePath, "rb" );
-            } else {
-                // we have a miss
-                // we need to iterate the config array until we find
-                // a node that has the data and then initiate a move
-                // with the correct configIndex
-                // if we cannot find file then we return a 404
-                if( $this->params['getContext'] != self::GET_CONTEXT_AUTOMOVE
-                     && isset( $this->config['autoMove'] )
-                      && $this->config['autoMove'] )
-                {
-                    $dataFH = $this->autoMove();
-                    $filePath = $this->tmpPath;
+            if( file_exists( $this->finalPath ) ){
+                $this->sendFile();
+            } else if( $this->canSelfHeal() ){
+                try{
+                    $this->selfHeal();
+                } catch( Exception $e ){
+                    $this->errorLog('selfHeal', $e->getTraceAsString() );
+                    WebDFS_Helper::send500();
                 }
-            }
-
-            if( $dataFH ){
-                $finfo = finfo_open( FILEINFO_MIME, $this->config["magicDbPath"] );
-                $contentType = finfo_file( $finfo, $filePath );
-                finfo_close( $finfo );
-
-                rewind( $dataFH );
-                header( "Content-Type: $contentType");
-                header( "Content-Length: ".filesize( $filePath ) );
-                fpassthru( $dataFH );
-
-                fclose( $dataFH );
-                if( $this->tmpPath == $filePath ){
-                    // we do this to remove the temp file we retrieved
-                    // when we got a miss
-                    unlink( $filePath );
-                }
-
             } else {
                 WebDFS_Helper::send404( $this->params['name'] );
             }
@@ -89,59 +76,186 @@ class WebDFS_Get extends WebDFS{
             // get the paths, choose one, and print a 301 redirect
             $nodes = $this->getTargetNodes();
             if( $nodes ){
-                WebDFS_Helper::send301( $nodes[ 0 ]['proxyUrl'].'/'.$this->params['name'] );
+                WebDFS_Helper::send301( $nodes[ 0 ]['staticUrl'].'/'.$this->params['name'] );
             }
         }
     }
 
     /**
-     * autoMove will attempt to find the data we are looking for
-     * and download it to a temp file and return an open file handle
-     * ready for reading
      *
-     * we also initiate a move if we successfully find the data
+     * self heal
+     *
+     * Self heal accomplishes one of two things depending on when and why it is called.
+     * It can be used to automatically move data from an old config when scaling.
+     * And it can be used to fetch and save to disk a copy of some data from a peer server when
+     * data has been lost; say, when a server failed.
+     *
+     * The self healing process is initiated when we have been asked for some data that is supposedly
+     * stored on our disk and we cannot find it.
+     * 
+     * When we are asked to fetch data that is supposedly stored on our disk, one of the following things can be true:
+     *
+     *      1) The data never was put on disk and this is simply servicing a request for data that is non-existent
+     *         ( we currently do not have a reliable way to tell what is supposedly on our disk
+     *           this could change if we start keeping a partial index in memory of what is supposedly on the disk. )
+     *
+     *      2) For some reason, the data is missing or corrupted and we need to heal ourselves
+     * 
+     *      3) New servers and disks have been added to the cluster configuration and we are performing
+     *         an auto move operation
+     * 
+     * Currently, we have to assume that we "might" or "probably" have been asked to store the data
+     * at some point in the past. Therefore we are forced to search for the data before we return a 404 to the client
+     * 
+     * heal is the function that fecthes the file from a peer server
+     * and then saves it to the temp path.
+     *
+     * self heal will:
+     *      iterate the all data configs starting with the oldest and look for the old data.
+     *      if we locate the data
+     *          we download it
+     *          save it to disk
+     *          fsync the data
+     *
+     *      The above facilitates self heal and the first part of auto move
+     *      To complete the auto move we need to check and see if the data needs to be deleted from the
+     *      source.  The source being the server from which we downloaded the file
+     *      for the self healing process.  we only delete the source if the server in question
+     *      is NOT in the target nodes list we derive from the current data config
+     *
+     *
+     *      If we cannot find that data at all;
+     *          remove the tempfile
+     *          we send a "404 not found" message back to the client
+     * 
+     * endif
      *
      */
-    protected function autoMove(){
-        $fh = null;
-        $totalConfigs = count( $this->config['data'] );
+
+    protected function selfHeal(){
+        $filename = $this->params['name'];
+        
+        $tmpPath = $this->tmpPath;
+        $fd = fopen( $tmpPath, "wb+" );
+        if( !$fd ){
+            $this->errorLog('selfHealNoFile', $tmpPath, $filename );
+            WebDFS_Helper::send500();
+            return;
+        }
+
         $headers = array();
         $headers[0] = self::HEADER_GET_CONTEXT.': '.self::GET_CONTEXT_AUTOMOVE;
-        for( $configIndex = 1; $configIndex < $totalConfigs; $configIndex++ ){
-            $moveFromConfig = $this->config['data'][ $configIndex ];
-            $locClass = $moveFromConfig['locatorClassName'];
-            $locator = new $locClass( $moveFromConfig );
-            $filename = $this->params['name'];
-            $nodes = $locator->findNodes( $filename );
+
+        $curl = curl_init();
+        curl_setopt($curl, CURLOPT_HTTPHEADER, $headers );
+        curl_setopt($curl, CURLOPT_FILE, $fd);
+        curl_setopt($curl, CURLOPT_TIMEOUT, 10);
+        curl_setopt($curl, CURLOPT_HEADER, false);
+        curl_setopt($curl, CURLOPT_FAILONERROR, true);
+        curl_setopt($curl, CURLOPT_BINARYTRANSFER, true);
+        curl_setopt($curl, CURLOPT_FOLLOWLOCATION, true);
+
+        $locator = null;
+        $configIdx = null;
+        $copiedFrom = null;
+        $fileSize = null;
+        $nodes = null;
+        $healed = false;
+
+        $totalConfigs = count( $this->config['data'] );
+        for( $configIdx = ($totalConfigs - 1); $configIdx >= 0; $configIdx-- ){
+
+            if( $configIdx == 0 ){
+                // 0 means we are looking at the most current config
+                $locator = $this->locator;
+                $nodes = $this->getTargetNodes();
+            } else {
+                $config = $this->config['data'][ $configIdx ];
+                $locClass = $config['locatorClassName'];
+                $locator = new $locClass( $config );
+                $nodes = $locator->findNodes( $filename );
+            }
             foreach( $nodes as $node ){
+                // check to see if we are looking at node data for ourselves
+                // in which case we do not want to make a request as that
+                // would be wasted resources and pointless
                 if( $node['proxyUrl'] != $this->config['thisProxyUrl'] ){
-                    $url = $node['proxyUrl'].'/'.urlencode($filename);
-                    $curl = curl_init();
-                    $fh = fopen( $this->tmpPath, "wb+" );
-                    curl_setopt($curl, CURLOPT_HTTPHEADER, $headers );
-                    curl_setopt($curl, CURLOPT_FILE, $fh);
-                    curl_setopt($curl, CURLOPT_TIMEOUT, 10);
-                    curl_setopt($curl, CURLOPT_HEADER, false);
+                    $url = $node['staticUrl'].'/'.urlencode($filename);
                     curl_setopt($curl, CURLOPT_URL, $url);
-                    curl_setopt($curl, CURLOPT_FAILONERROR, true);
-                    curl_setopt($curl, CURLOPT_BINARYTRANSFER, true);
-                    curl_setopt($curl, CURLOPT_FOLLOWLOCATION, true);
                     curl_exec($curl);
                     $info = curl_getinfo($curl);
                     if( !curl_errno($curl) && $info['http_code'] < 400 ){
+                        // need to  check to see if we wrote all of the data
+                        // as dictated by the content length headeer
+                        // and we need to fsync if configured to do so
+                        $fileSize = filesize( $tmpPath );
+                        if( $fileSize != $info['download_content_length'] ){
+                            fclose( $fd );
+                            unlink( $tmpPath );
+                            $msg = sprintf( $this->config['exceptionMsgs']['incompleteWrite'], $info['download_content_length'], $fileSize );
+                            throw new WebDFS_Exception( $msg );
+                        }
+                        $this->fsync( $fd );
+                        $copiedFrom = $node;
                         $this->debugLog('autoMove');
-                        $this->sendStartMove( $locator, $configIndex );
+                        $healed = true;
                         break 2;
                     }
-                    fclose( $fh );
-                    $fh = null;
+                    ftruncate($fd, 0);
                 }
             }
         }
-        if( $fh ){
-            fclose( $fh );
-            $fh = fopen( $this->tmpPath, "rb" );
+        // at this point we have achieved the same effect as a spoolData() call
+        // so now we:
+        // save the data
+        // return the file back to the caller
+        // if the source proxy url is NOT in the current target nodes list
+        //      we issue a delete command to the source node
+        //      and delete the data from the old location
+        // endif
+        if( !$healed ){
+            // we cannot find the data
+            // remove the temp file
+            // send a 404
+            fclose( $fd );
+            unlink( $tmpPath );
+            WebDFS_Helper::send404( $this->params['name'] );
+        } else if( $fileSize > 0 ){
+            fclose( $fd );
+            $this->saveData();
+            $this->sendFile();
+            // here we check if the source from where we copied
+            // is included in the the current target node list
+            $position = $this->getTargetNodePosition( $nodes, $copiedFrom['proxyUrl'] );
+            if( $position == WebDFS::POSITION_NONE ){
+                $this->sendDelete( $copiedFrom['proxyUrl'].'/'.$filename );
+            }
         }
-        return $fh;
+    }
+
+    /**
+     * send a delete command in parallel to the passed target nodes and filename
+     * we need to be sure to include the Webdfs-Propagate-Delete
+     * header with a value of 0 as we do not want the delete command to propagate.
+     *
+     * here
+     */
+    protected function sendDelete( $url ){
+        $opts = array(
+            CURLOPT_TIMEOUT => 10,
+            CURLOPT_CUSTOMREQUEST => "DELETE",
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_URL => $url,
+        );
+        $curl = curl_init();
+        curl_setopt_array($curl, $opts);
+        $response = curl_exec( $curl );
+        $info = curl_getinfo( $curl );
+        $isHttpErr =  isset( $info['http_code'] ) && ( $info['http_code'] >= 400 );
+        $isOtherErr = curl_errno($curl);
+        if( $isOtherErr || $isHttpErr ){
+            $msg = sprintf( $this->config['exceptionMsgs']['selfHealDelete'], $url );
+            throw new WebDFS_Exception( $msg );
+        }
     }
 }

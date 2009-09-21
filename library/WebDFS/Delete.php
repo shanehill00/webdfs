@@ -46,13 +46,12 @@ class WebDFS_Delete extends WebDFS{
     }
 
     public function handle(){
-        $error500Msg = "error when processing delete command";
         set_error_handler( array( $this, "handleDeleteDataError") );
         try{
             $this->_deleteData( );
         } catch( WebDFS_Exception_DeleteException $e ){
             $this->errorLog('deleteData', $this->params['action'], $this->params['name'], $e->getMessage(), $e->getTraceAsString() );
-            WebDFS_Helper::send500($error500Msg);
+            WebDFS_Helper::send500( $this->config['errMsgs']['delete500'], $this->params['name'] );
         }
         restore_error_handler();
 
@@ -77,12 +76,15 @@ class WebDFS_Delete extends WebDFS{
     protected function sendDelete( ){
         $forwardInfo = $this->getForwardInfo( );
         if( $forwardInfo ){
+            // disconnect before we make another request
+            WebDFS_Helper::disconnectClient();
+            if( isset( $this->params['propagateDelete'] ) && !$this->params['propagateDelete'] ){
+                return;
+            }
             $errNo = 0;
             $origPosition = $forwardInfo['position'];
             $curl = curl_init();
             $headers = array();
-            // disconnect before we make another request
-            WebDFS_Helper::disconnectClient();
             $loops = 0;
             $nodeLength = count( $this->getTargetNodes( ) );
             do{

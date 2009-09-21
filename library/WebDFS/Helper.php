@@ -78,6 +78,7 @@ class WebDFS_Helper {
             'moveConfigIndex' => 0,
             'moveContext' => WebDFS::MOVE_CONTEXT_START,
             'getContext' => '',
+            'propagateDelete' => 1,
         );
         if( isset( $_SERVER['PATH_INFO'] ) ){
             $params['name'] = trim($_SERVER['PATH_INFO'],'/');
@@ -120,6 +121,10 @@ class WebDFS_Helper {
 
             if( isset( $headers[ WebDFS::HEADER_CONTENT_LENGTH ] ) ){
                 $params['contentLength'] = (int) $headers[ WebDFS::HEADER_CONTENT_LENGTH ];
+            }
+
+            if( isset( $headers[ WebDFS::HEADER_PROPAGATE_DELETE ] ) ){
+                $params['propagateDelete'] = (int) $headers[ WebDFS::HEADER_PROPAGATE_DELETE ];
             }
         }
         return $params;
