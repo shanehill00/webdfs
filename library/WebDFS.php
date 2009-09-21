@@ -157,7 +157,7 @@ class WebDFS
      * @var <string>
      */
     protected $finalDir = "";
-    
+
     /**
      * an array that holds all the target nodes
      * for the file being saved
@@ -177,17 +177,17 @@ class WebDFS
 
     /**
      * holds an array of debug messages
-     * 
+     *
      * @see debugLog()
      * @var <array>
      */
     protected $debugMsgs = null;
-    
+
     /**
      * holds an array of error messages
-     * 
+     *
      * @see errorLog()
-     * @var <array> 
+     * @var <array>
      */
     protected $errMsgs = null;
 
@@ -210,6 +210,7 @@ class WebDFS
     const HEADER_CONFIG_INDEX      = 'Webdfs-Config-Index';
     const HEADER_CONTENT_LENGTH    = 'Content-Length';
     const HEADER_PROPAGATE_DELETE  = 'Webdfs-Propagate-Delete';
+    const HEADER_FORCE_DELETE      = 'Webdfs-Force-Delete';
 
     const MOVE_CONTEXT_START  = 'start';
     const MOVE_CONTEXT_CREATE = 'create';
@@ -252,7 +253,7 @@ class WebDFS
         $actionParams = $this->config[ 'reqMethodSettings' ][ $this->params['action'] ];
         require_once( $actionParams['require'] );
         $class = $actionParams['class'];
-        
+
         $action = new $class( $this->config, $this->params );
         $action->handle();
     }
@@ -367,7 +368,9 @@ class WebDFS
      *
      */
     protected function _deleteData( ){
-        if(  $this->iAmATarget( ) && file_exists( $this->finalPath ) ){
+        $forceDelete = (isset($this->params['forceDelete']) && $this->params['forceDelete'] );
+        if(  ($this->iAmATarget( ) || $forceDelete )
+                && file_exists( $this->finalPath ) ){
             $deleted = unlink( $this->finalPath );
             if( !$deleted ){
                 // throw exception if the delete failed
@@ -510,7 +513,7 @@ class WebDFS
 
     /**
      * return a boolean indicating whether or not auto move is enabled
-     * 
+     *
      * @return <boolean>
      */
     protected function canSelfHeal(){

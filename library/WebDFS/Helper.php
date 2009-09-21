@@ -126,6 +126,10 @@ class WebDFS_Helper {
             if( isset( $headers[ WebDFS::HEADER_PROPAGATE_DELETE ] ) ){
                 $params['propagateDelete'] = (int) $headers[ WebDFS::HEADER_PROPAGATE_DELETE ];
             }
+
+            if( isset( $headers[ WebDFS::HEADER_FORCE_DELETE ] ) ){
+                $params['forceDelete'] = (int) $headers[ WebDFS::HEADER_FORCE_DELETE ];
+            }
         }
         return $params;
     }
@@ -173,7 +177,7 @@ class WebDFS_Helper {
             self::$clientGone = true;
         }
     }
-    
+
     public static function send500( $msg = "Internal Server Error" ) {
         if(self::$clientGone) return;
         header(  $_SERVER['SERVER_PROTOCOL'].' 500 Internal Server Error' );
@@ -191,7 +195,7 @@ class WebDFS_Helper {
         session_write_close();
         self::$clientGone = true;
     }
-    
+
     public static function send404( $path = "" ) {
         if(self::$clientGone) return;
         $msg = "cannot find $path";
