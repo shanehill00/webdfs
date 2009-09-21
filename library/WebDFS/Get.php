@@ -234,14 +234,16 @@ class WebDFS_Get extends WebDFS{
     }
 
     /**
-     * send a delete command in parallel to the passed target nodes and filename
-     * we need to be sure to include the Webdfs-Propagate-Delete
+     * Send a delete command to the passed target nodes and filename.
+     *
+     * We need to be sure to include the Webdfs-Propagate-Delete
      * header with a value of 0 as we do not want the delete command to propagate.
      *
      * here
      */
     protected function sendDelete( $url ){
         $opts = array(
+            CURLOPT_HTTPHEADER => array(WebDFS::HEADER_PROPAGATE_DELETE.': 0'),
             CURLOPT_TIMEOUT => 10,
             CURLOPT_CUSTOMREQUEST => "DELETE",
             CURLOPT_RETURNTRANSFER => true,
