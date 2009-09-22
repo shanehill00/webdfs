@@ -80,7 +80,13 @@ class WebDFS_Helper {
             'getContext' => '',
             'propagateDelete' => 1,
         );
-        if( isset( $_SERVER['PATH_INFO'] ) ){
+
+        // need to create the path info if nothing exists
+        if( !isset( $_SERVER['PATH_INFO'] ) && isset( $_SERVER['REDIRECT_URL'] ) ){
+            $_SERVER['PATH_INFO'] = preg_replace('/^.*?\/([^\/]+)$/','\1', $_SERVER['REDIRECT_URL']);
+        }
+
+        if( isset( $_SERVER['PATH_INFO'] ) && $_SERVER['PATH_INFO'] !== '' ){
             $params['name'] = trim($_SERVER['PATH_INFO'],'/');
             $params['name'] = str_replace( array('/','\\',':','*','?','|','<','>','"','%'),"", $params['name'] );
 
