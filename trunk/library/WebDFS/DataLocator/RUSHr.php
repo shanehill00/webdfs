@@ -43,11 +43,18 @@ class WebDFS_DataLocator_RUSHr
 {
 
     /**
+     * number of copies to make of each object
+     *
+     * @var int
+     */
+    protected $replicationDegree = 1;
+
+    /**
      * an ordinal array where each element represents a cluster
      * and the value is an int that is the total number of nodes in the cluster
      *
      * this property is populated at construction time only
-     * @var unknown_type
+     * @var array
      */
     protected $clusters = array();
 
@@ -94,15 +101,15 @@ class WebDFS_DataLocator_RUSHr
      *  The values above are derived from the $dataConfig passed to the locator.
      *
      * @param object $dataConfig
-     * @return  DataLocator_HonickyMiller $this
+     * @return  DataLocator_RUSHr $this
      *
-     * @throws DataLocator_HonickyMiller_Exception
+     * @throws WebDFS_DataLocator_Exception
      *
      */
     protected $nodes = array();
 
     /**
-     * @param <int> $dataConfig vaue used to help seed the random number generator
+     * @param <int> value used to help seed the random number generator
      */
     const SEED_PARAM = 1560;
     
@@ -115,7 +122,6 @@ class WebDFS_DataLocator_RUSHr
         $this->replicationDegree = $dataConfig['replicationDegree'];
         $this->totalClusters = count($dataConfig['clusters']);
 
-        $largestNodeCountW = 0;
         foreach( $dataConfig['clusters'] as $cluster ){
             $nodeCount = count( $cluster['nodes'] );
             for( $n = 0; $n < $nodeCount; $n++ ){
@@ -144,9 +150,6 @@ class WebDFS_DataLocator_RUSHr
         if( ( $totalNodes <= 0 )  || ( $totalClusters <= 0 ) ){
             throw new WebDFS_DataLocator_Exception("the total nodes or total clusters is negative or 0.  bad joo joos!");
         }
-
-        $sumRemainingNodes = $totalNodes;
-
 
         // get the starting cluster
         $currentCluster = --$totalClusters;
@@ -244,18 +247,6 @@ class WebDFS_DataLocator_RUSHr
 
     public function findNodes( $objKey ){
         return $this->findNode( $objKey );
-    }
-
-    public function isTargetNodeForObj( $nodeUrl, $objKey ){
-        $isTarget = false;
-        $nodes = $this->findNodes($objKey);
-        foreach( $nodes as $node ){
-            if( $nodeUrl == $node['proxyUrl'] ){
-                $isTarget = true;
-                break;
-            }
-        }
-        return $isTarget;
     }
 
     public function getReplicationDegree(){

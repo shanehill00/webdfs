@@ -689,7 +689,7 @@ class WebDFS
             // is included in the the current target node list
             $position = $this->getTargetNodePosition( null, $copiedFrom['proxyUrl'] );
             if( $position == WebDFS::POSITION_NONE ){
-                $this->sendDelete( $copiedFrom['proxyUrl'].'/'.$filename );
+                $this->sendDeleteForHeal( $copiedFrom['proxyUrl'].'/'.$filename );
             }
         }
     }
@@ -701,7 +701,7 @@ class WebDFS
      * header with a value of 0 as we do not want the delete command to propagate.
      *
      */
-    protected function sendDelete( $url ){
+    protected function sendDeleteForHeal( $url ){
         $opts = array(
             CURLOPT_HTTPHEADER => array(WebDFS::HEADER_PROPAGATE_DELETE.': 0',WebDFS::HEADER_FORCE_DELETE.': 1'),
             CURLOPT_TIMEOUT => 10,
