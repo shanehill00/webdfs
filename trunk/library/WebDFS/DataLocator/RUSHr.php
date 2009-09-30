@@ -140,24 +140,24 @@ class WebDFS_DataLocator_RUSHr
     */
     public function findNode( $objKey ){
 
-        $nodeData = array();
         $clusters = $this->clusters;
+        $sumRemainingNodes = $this->totalNodes;
+        $sumRemainingNodesW = $this->totalNodesW;
+        $replicationDegree = $this->replicationDegree;
         $totalClusters = $this->totalClusters;
         $totalNodes = $this->totalNodes;
-        $clusterConfig = $this->dataConfig['clusters'];
-        $replicationDegree = $this->replicationDegree;
         // throw an exception if the data is no good
         if( ( $totalNodes <= 0 )  || ( $totalClusters <= 0 ) ){
             throw new WebDFS_DataLocator_Exception("the total nodes or total clusters is negative or 0.  bad joo joos!");
         }
+        
+        $clusterConfig = $this->dataConfig['clusters'];
+        
+        $sumRemainingNodes = $totalNodes;
+
 
         // get the starting cluster
         $currentCluster = --$totalClusters;
-
-
-        $sumRemainingNodes = $this->totalNodes;
-        // get the weighted total disks
-        $sumRemainingNodesW = $this->totalNodesW;
 
         // turn a string identifier into an integer for the random seed
         if( is_string( $objKey ) ){
@@ -174,6 +174,7 @@ class WebDFS_DataLocator_RUSHr
          * m = disks in current cluster
          * n = remaining nodes
          */
+        $nodeData = array();
         while( 1 ){
 
             // prevent an infinite loop, in case there is a bug

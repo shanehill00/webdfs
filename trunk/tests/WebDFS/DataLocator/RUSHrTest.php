@@ -154,6 +154,77 @@ class WebDFS_DataLocator_RUSHrTest extends PHPUnit_Framework_TestCase
         }
     }
 
+    public function testDistribution(){
+        // first create a config with 50 nodes
+        // 10 sub clusters
+        // 5 nodes per sub cluster
+        // 3 replicas per object
+        // even weighting
+        echo("\nstarting distribution test\n");
+        $numClusters = 5;
+        $nodesPerCluster = 2;
+        $replicationDegree = 3;
+        $clusterToWeight = 0;
+        $weight = 1;
+
+        $hm = new WebDFS_DataLocator_RUSHr(
+            $this->makeConfig($numClusters, $nodesPerCluster, $replicationDegree, $clusterToWeight, $weight)
+        );
+
+
+        $replicaCount = array();
+        $grandTotal = 0;
+
+        $iterations = 100000;
+        $uuid;
+        $nodes = array();
+        $total = 0;
+
+        for( $n = 0; $n < $iterations; $n++ ){
+            $uuid = uniqid("fgfgg", true);
+            $nodes = $hm->findNode( $uuid );
+            $size = count($nodes);
+            if( !( $n % 10000 ) ){
+                echo("iterations: $n  - node size: $size \n");
+            }
+            $grandTotal += $size;
+            if( !( $grandTotal % 10000 ) ){
+                echo("placed $grandTotal replicas \n");
+            }
+            for( $i = 0; $i < $size; $i++ ){
+                $node = $nodes[$i];
+                $proxyUrl = $node["proxyUrl"];
+                if( !isset( $replicaCount[$proxyUrl] ) ){
+                    $replicaCount[$proxyUrl] = 0;
+                }
+                $total = $replicaCount[$proxyUrl];
+                if( $total == null ){
+                    $total = 0;
+                }
+                $total++;
+                $replicaCount[$proxyUrl] = $total;
+            }
+        }
+        $eGrandTotal = $iterations * $replicationDegree;
+        $avg = $grandTotal / ($numClusters * $nodesPerCluster);
+        $dev = $avg * 0.10;
+        $ctDev = 0;
+        $n = 0;
+        foreach( $replicaCount as $proxyUrl => $total ){
+            $n++;
+            echo( "server $n :  $total" );
+            $ctDev = abs( $avg - $total );
+            if(!($ctDev <= $dev) ){
+                echo(" deviated more than $dev : $ctDev <= $dev");
+            }
+            echo("\n");
+        }
+        echo( "expected: $eGrandTotal - placed: $grandTotal" );
+        echo("\n");
+        echo( "avg: " + ($grandTotal / ($numClusters * $nodesPerCluster) ) );
+        echo("\n");
+    }
+    
     public function makeConfig($numClusters = 1, $numNodes = 1, $replicationDegree = 1, $clusterToWeight = 0, $weight = 1){
         $clusters = array( 'replicationDegree' => $replicationDegree, 'clusters' => array() );
 
