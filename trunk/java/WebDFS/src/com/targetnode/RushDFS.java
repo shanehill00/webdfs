@@ -8,6 +8,7 @@ package com.targetnode;
 import com.targetnode.data.ILocator;
 import com.targetnode.data.locator.LocatorException;
 import com.targetnode.data.locator.RUSHr;
+import com.targetnode.rushdfs.Request;
 import com.targetnode.rushdfs.RushDFSException;
 import java.io.File;
 import java.io.FileOutputStream;
@@ -35,57 +36,25 @@ public class RushDFS{
      * there are also some values in the array that are "global"
      * such as the path separator to use for file paths.
      *
-     * @var <array>
      */
     protected HashMap<String,Object> config = null;
 
     /**
-     * the data locator that is used for looking up the
-     * location of an object.
-     *
-     * @var <ILocator>
+     * a concurrent hashmap where we cache several locators
+     * several locators for use during request fulfillment
+     * the reason we need more than one locator is that we might be handling
+     * requests for old data configurations.  also we do want to have to
+     * re instantiate a locator for each request
      */
+    protected ConcurrentHashMap<HashMap<String,Object>,ILocator> locators = null;
 
-    protected ILocator locator = null;
-
-    /**
-     * caller input for things like
-     * file name, data directories
-     * temp storage directories, etc
-     *
-     * @var <array>
-     */
-    protected HashMap<String,Object> params = null;
-
-    /**
-     * path to the temp copy of the uploaded file
-     * this file may or may not exist, so we need to do appropriate
-     * existence checks
-     *
-     * @var <string>
-     */
-    protected String tmpPath = "";
-
-    /**
-     * path to the final copy of the uploaded file
-     * if it gets saved here
-     *
-     * @var <string>
-     */
-    protected String finalPath = "";
-
-    /**
-     * final path to the directory where the file will be saved
-     *
-     * @var <string>
-     */
-    protected String finalDir = "";
+    protected ConcurrentHashMap<String,com.targetnode.rushdfs.Request> requests
+            = new ConcurrentHashMap<String,com.targetnode.rushdfs.Request>();
 
     /**
      * an array that holds all the target nodes
      * for the file being saved
      *
-     * @var <array>
      */
     protected HashMap[] targetNodes = null;
 
@@ -94,50 +63,35 @@ public class RushDFS{
      * debug messages.  primarily useful for
      * watching how a file propagates through the nodes
      *
-     * @var <boolean>
      */
     protected boolean debug = false;
 
     /**
      * holds an array of debug messages
-     *
-     * @see debugLog()
-     * @var <array>
      */
     protected HashMap<String,String> debugMsgs = null;
 
     /**
      * holds an array of error messages
-     *
-     * @see errorLog()
-     * @var <array>
      */
     protected HashMap<String,String> errMsgs = null;
 
     /**
      * holds an array of exception messages
-     *
-     * @var
      */
-    
     protected HashMap<String,String> exceptionMsgs = null;
+
     /**
      * represents the size in bytes that we read from STDIN and write to a temp file
-     *
-     * @var
      */
     protected Integer spoolReadSize = null;
 
-    /**
-     * holds the data read from stdin
-     */
-    protected byte[] readBuffer = null;
 
     /**
-     * boolean indicating whther or not we need to to try and force
-     * out to disk the data written to the file descriptor
+     * holds the data config found in the master config
      */
-    protected boolean fsync = false;
+    protected HashMap[] dataConfig = null;
+
 
     /**
      * HashMap holding all of the paths that have been made thus far
@@ -148,23 +102,18 @@ public class RushDFS{
     protected ConcurrentHashMap<String,Boolean> dirs = new ConcurrentHashMap<String, Boolean>();
 
     /**
-     *
      * integer value that indicates that
      * we do not have a position in the list
      * of target nodes.
      * essentially meaning that we are not a target node.
-     *
-     * @var <int>
      */
     public static final int POSITION_NONE = -1;
 
     /**
-     * the proxy url by which we are identified
-     * and with which the outside world communicates with us
+     * property indicating whther or not we should try and self heal if at all possible
      */
-    protected String proxyUrl;
-
-    protected boolean canSelfHeal = false;;
+    protected boolean canSelfHeal = false;
+    protected boolean selfHeal = false;
 
     /**
      * various headers used in the requests sent to webdfs
@@ -207,39 +156,66 @@ public class RushDFS{
         key = "spoolReadSize";
         spoolReadSize =  config.containsKey(key) ? (Integer) config.get(key) : 2048;
 
-        readBuffer = new byte[spoolReadSize];
+        dataConfig = (HashMap[]) config.get("data");
+
+        locators = new ConcurrentHashMap<HashMap<String, Object>, ILocator>();
+
+        selfHeal = (Boolean) config.get("selfHeal");
+
     }
 
     /**
+     * here is where we create the request objects for each request that we get
+     * we do this to be thread safe and guarantee that each thread will not
+     * interfere with each other when fulfilling a request.
+     *
      * @param params
      * @throws com.targetnode.data.locator.LocatorException
      */
     public void initRequest( HashMap<String, Object> params ) throws LocatorException{
-        this.params = params;
+        String threadName = Thread.currentThread().getName();
+        requests.put( threadName, new Request() );
+        Request request = requests.get(threadName);
+
+        request.setParams(params);
         // the configIndex tells us which config to use for this request
         // it is initially passed to us via the header Webdfs-Config-Index
         // we need this value because we need to have a "history" of configs to
         // accommodate automatic movement of data.
-        int configIndex = (Integer) params.get("configIndex");
-        HashMap[] dc = (HashMap[]) config.get("data");
-        HashMap<String, Object> dataConfig = (HashMap<String, Object>) dc[configIndex];
+        Integer configIndex = (Integer) params.get("configIndex");
+        HashMap<String, Object> dc = (HashMap<String, Object>) dataConfig[configIndex];
 
-        locator = new RUSHr( dataConfig );
+        request.setDataConfig(dc);
+        request.setLocator(getLocator(dc));
+        request.setFinalDir( dc.get("storageRoot") + "/" + params.get("pathHash") );
 
-        finalDir = dataConfig.get("storageRoot") + "/" + params.get("pathHash");
-        finalPath = finalDir + "/" + params.get("name");
-        tmpPath = dataConfig.get("tmpRoot") + "/" + UUID.randomUUID().toString();
-        fsync = (Boolean) dataConfig.get("fsync");
+        request.setFinalPath( request.getFinalDir() + "/" + params.get("name") );
+        request.setTmpPath(dc.get("tmpRoot") + "/" + UUID.randomUUID().toString() );
+        request.setFsync( (Boolean) dc.get("fsync") );
 
-        Boolean am = (Boolean) config.get("selfHeal");
-        if(am == null) am = false;
         String getContext = (String) params.get("getContext");
-        canSelfHeal = ( am && ( GET_CONTEXT_SELFHEAL.equals( getContext ) ) );
+        request.setCanSelfHeal( selfHeal && ( GET_CONTEXT_SELFHEAL.equals( getContext ) ) );
+
+        request.setReadBuffer( new byte[spoolReadSize] );
+
+    }
+
+    protected ILocator getLocator( HashMap<String, Object> dataConfig )
+    throws LocatorException{
+        if( !locators.containsKey(dataConfig) ){
+            RUSHr l = new RUSHr(dataConfig);
+            locators.putIfAbsent(dataConfig, l);
+        }
+        return locators.get(dataConfig);
     }
 
     public void writeFile( ServletInputStream input ) throws IOException, RushDFSException{
         spoolData( input );
         saveData();
+    }
+
+    protected Request getRequest(){
+        return requests.get( Thread.currentThread().getName() );
     }
 
     /*
@@ -254,13 +230,16 @@ public class RushDFS{
     throws IOException, RushDFSException
     {
         // write stdin to a temp file
+        Request req = getRequest();
+        String tmpPath = req.getTmpPath();
+        byte[] readBuffer = req.getReadBuffer();
+        HashMap<String,Object> params = req.getParams();
 
         FileOutputStream spoolFile = new FileOutputStream(tmpPath);
 
         int totalWritten = 0;
         int read = input.read(readBuffer);
 
-        int foo = 0;
         while( read != -1 ){
             spoolFile.write(readBuffer, 0, read);
             totalWritten += read;
@@ -288,7 +267,7 @@ public class RushDFS{
         //   we are a target storage node for the data
         //   and this is the first replica to be created
         spoolFile.flush();
-        if( fsync ){
+        if( req.shouldSync() ){
             FileChannel fc = spoolFile.getChannel();
             fc.force(true);
         }
@@ -323,6 +302,11 @@ public class RushDFS{
      * @throws RushDFSException
      */
     protected void saveData( ) throws RushDFSException{
+        Request req = getRequest();
+        String tmpPath = req.getTmpPath();
+        String finalPath = req.getFinalPath();
+        String finalDir = req.getFinalDir();
+
         if( !dirs.containsKey( finalDir ) ){
             File dir = new File( finalDir );
             dir.mkdirs();
@@ -333,9 +317,10 @@ public class RushDFS{
             dirs.put( finalDir, true );
         }
         // now rename the temp file
+
         File tmpFile = new File( tmpPath );
         File finalFile = new File( finalPath );
-        if(  !tmpFile.renameTo(finalFile) ){
+        if( !tmpFile.renameTo(finalFile) ){
             // throw exception if the rename failed
             String msg = getExceptionMsg("failedRename",new Object[]{tmpPath, finalPath});
             throw new RushDFSException( msg  );
@@ -355,8 +340,13 @@ public class RushDFS{
      */
     protected void _deleteData( String name )
     throws RushDFSException, LocatorException{
+        HashMap<String,Object> params = getRequest().getParams();
         Boolean forceDelete = (Boolean) params.get("forceDelete");
         if( forceDelete == null ) forceDelete = false;
+        
+        Request req = getRequest();
+        String finalPath = req.getFinalPath();
+
         File finalFile = new File( finalPath );
         if( ( iAmATarget( name ) || forceDelete ) && finalFile.exists() ){
             boolean deleted = finalFile.delete();
@@ -383,15 +373,15 @@ public class RushDFS{
     
     public ArrayList<HashMap> getTargetNodes( String name )
     throws LocatorException{
-        ArrayList<HashMap> nodes = locator.findNodes( name );
-        return nodes;
+        return getRequest().getLocator().findNodes( name );
     }
 
     protected int getTargetNodePosition( ArrayList<HashMap> nodes ){
         int position = POSITION_NONE;
         int n = 0;
+        String thisProxyUrl = getRequest().getProxyUrl();
         for( HashMap node : nodes ){
-            if( node.get("proxyUrl") == proxyUrl ){
+            if( node.get("proxyUrl") == thisProxyUrl ){
                 position = n;
                 break;
             }
