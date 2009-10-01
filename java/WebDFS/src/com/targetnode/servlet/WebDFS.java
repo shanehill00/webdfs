@@ -22,13 +22,11 @@ public class WebDFS extends HttpServlet {
         private static final long serialVersionUID = 42L;
 
     protected static com.targetnode.RushDFS fs = null;
-    protected static Long time = null;
     protected static XMLConfiguration config = null;
     protected Random ran = new Random();
 
     @Override
     public void init(){
-        time = System.currentTimeMillis();
         try{
             HashMap<String, Object> dfsConfig = getDFSConfig();
             fs = new com.targetnode.RushDFS( dfsConfig );
@@ -57,7 +55,6 @@ public class WebDFS extends HttpServlet {
     {
         HashMap<String, Object> reqParams = getRequestParams( request );
         PrintWriter out = response.getWriter();
-        out.println(time + " ahhh7");
     }
 
     /**
@@ -68,26 +65,23 @@ public class WebDFS extends HttpServlet {
     public void doPut(HttpServletRequest request, HttpServletResponse response){
         HashMap<String, Object> reqParams = getRequestParams( request );
 
-        PrintWriter out = null;
         try{
+
             fs.initRequest( reqParams );
-            fs.writeFile( request.getInputStream() );
+            ServletInputStream is = request.getInputStream();
+            fs.writeFile( is );
+            is.close();
+
+            response.setStatus(204);
+            response.setContentLength(0);
+            
         } catch( LocatorException e ) {
             e.printStackTrace();
             // need to return a 500 error to the client at this point
         } catch( IOException e ){
             e.printStackTrace();
             // need to return a 500 error to the client at this point
-        } catch( RushDFSException e) {
-            e.printStackTrace();
-            // need to return a 500 error to the client at this point
-        }
-
-        try{
-            out = response.getWriter();
-            response.setStatus(204);
-            response.setContentLength(0);
-        } catch(IOException e){
+        } catch( RushDFSException e ) {
             e.printStackTrace();
             // need to return a 500 error to the client at this point
         }
