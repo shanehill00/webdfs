@@ -8,7 +8,7 @@ package com.targetnode;
 import com.targetnode.data.ILocator;
 import com.targetnode.data.locator.LocatorException;
 import com.targetnode.data.locator.RUSHr;
-import com.targetnode.rushdfs.Request;
+import com.targetnode.rushdfs.DFSFile;
 import com.targetnode.rushdfs.RushDFSException;
 import java.io.File;
 import java.io.FileOutputStream;
@@ -19,7 +19,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
-import javax.servlet.ServletInputStream;
 
 /**
  *
@@ -49,8 +48,8 @@ public class RushDFS{
      */
     protected ConcurrentHashMap<HashMap<String,Object>,ILocator> locators = null;
 
-    protected ConcurrentHashMap<String,com.targetnode.rushdfs.Request> requests
-            = new ConcurrentHashMap<String,com.targetnode.rushdfs.Request>();
+    protected ConcurrentHashMap<com.targetnode.rushdfs.DFSFile,com.targetnode.rushdfs.DFSFile> requests
+            = new ConcurrentHashMap<com.targetnode.rushdfs.DFSFile,com.targetnode.rushdfs.DFSFile>();
 
     /**
      * an array that holds all the target nodes
@@ -172,13 +171,12 @@ public class RushDFS{
      *
      * @param params
      * @throws com.targetnode.data.locator.LocatorException
+     * @return
      */
-    public void openRequest( HashMap<String, Object> params ) throws LocatorException{
-        String threadName = Thread.currentThread().getName();
-        requests.put( threadName, new Request() );
-        Request request = requests.get(threadName);
+    public DFSFile open( HashMap<String, Object> params ) throws LocatorException{
+        DFSFile rFD = new DFSFile();
 
-        request.setParams(params);
+        rFD.setParams(params);
         // the configIndex tells us which config to use for this request
         // it is initially passed to us via the header Webdfs-Config-Index
         // we need this value because we need to have a "history" of configs to
@@ -186,28 +184,28 @@ public class RushDFS{
         Integer configIndex = (Integer) params.get("configIndex");
         HashMap<String, Object> dc = (HashMap<String, Object>) dataConfig[configIndex];
 
-        request.setDataConfig(dc);
-        request.setLocator(getLocator(dc));
-        request.setFinalDir( dc.get("storageRoot") + "/" + params.get("pathHash") );
+        rFD.setDataConfig(dc);
+        rFD.setLocator(getLocator(dc));
+        rFD.setFinalDir( dc.get("storageRoot") + "/" + params.get("pathHash") );
 
-        request.setFinalPath( request.getFinalDir() + "/" + params.get("name") );
-        request.setTmpPath(dc.get("tmpRoot") + "/" + UUID.randomUUID().toString() );
-        request.setFsync( (Boolean) dc.get("fsync") );
+        rFD.setFinalPath( rFD.getFinalDir() + "/" + params.get("name") );
+        rFD.setTmpPath(dc.get("tmpRoot") + "/" + UUID.randomUUID().toString() );
+        rFD.setFsync( (Boolean) dc.get("fsync") );
 
         String getContext = (String) params.get("getContext");
-        request.setCanSelfHeal( selfHeal && ( GET_CONTEXT_SELFHEAL.equals( getContext ) ) );
+        rFD.setCanSelfHeal( selfHeal && ( GET_CONTEXT_SELFHEAL.equals( getContext ) ) );
 
-        request.setReadBuffer( new byte[spoolReadSize] );
+        rFD.setReadBuffer( new byte[spoolReadSize] );
 
-        request.setInputStream((InputStream) params.get("inputStream") );
+        rFD.setInputStream( (InputStream) params.get("inputStream") );
+
+        rFD.setFileName( (String) params.get("name") );
+
+        return rFD;
     }
 
-    public void closeRequest(){
-        requests.remove( Thread.currentThread().getName() );
-    }
-
-    protected Request getRequest(){
-        return requests.get( Thread.currentThread().getName() );
+    public void close( DFSFile fd ){
+        requests.remove( fd );
     }
 
     protected ILocator getLocator( HashMap<String, Object> dataConfig )
@@ -219,10 +217,9 @@ public class RushDFS{
         return locators.get(dataConfig);
     }
 
-    public void writeFile( ) throws IOException, RushDFSException{
-        InputStream input = getRequest().getInputStream();
-        spoolData( input );
-        saveData();
+    public void write( DFSFile fd ) throws IOException, RushDFSException{
+        spoolData( fd );
+        saveData( fd );
     }
 
     /*
@@ -233,14 +230,14 @@ public class RushDFS{
      *
      * we use file_put_contents if the dio libs are not available
      */
-    protected void spoolData( InputStream input )
+    protected void spoolData( DFSFile fd )
     throws IOException, RushDFSException
     {
         // write stdin to a temp file
-        Request req = getRequest();
-        String tmpPath = req.getTmpPath();
-        byte[] readBuffer = req.getReadBuffer();
-        HashMap<String,Object> params = req.getParams();
+        InputStream input = fd.getInputStream();
+        String tmpPath = fd.getTmpPath();
+        byte[] readBuffer = fd.getReadBuffer();
+        HashMap<String,Object> params = fd.getParams();
 
         FileOutputStream spoolFile = new FileOutputStream(tmpPath);
 
@@ -274,7 +271,7 @@ public class RushDFS{
         //   we are a target storage node for the data
         //   and this is the first replica to be created
         spoolFile.flush();
-        if( req.shouldSync() ){
+        if( fd.shouldSync() ){
             FileChannel fc = spoolFile.getChannel();
             fc.force(true);
         }
@@ -306,13 +303,14 @@ public class RushDFS{
     }
     /**
      * check for the existence of a directory
+     *
+     * @param fd
      * @throws RushDFSException
      */
-    protected void saveData( ) throws RushDFSException{
-        Request req = getRequest();
-        String tmpPath = req.getTmpPath();
-        String finalPath = req.getFinalPath();
-        String finalDir = req.getFinalDir();
+    protected void saveData( DFSFile fd ) throws RushDFSException{
+        String tmpPath = fd.getTmpPath();
+        String finalPath = fd.getFinalPath();
+        String finalDir = fd.getFinalDir();
 
         if( !dirs.containsKey( finalDir ) ){
             File dir = new File( finalDir );
@@ -341,21 +339,20 @@ public class RushDFS{
      * receive erroneous delete requests and it
      * does not seem like we should die because of those
      *
-     * @param name 
+     *  @param fd 
      * @throws RushDFSException
      * @throws LocatorException
      */
-    protected void _deleteData( String name )
+    public void unlink( DFSFile fd )
     throws RushDFSException, LocatorException{
-        HashMap<String,Object> params = getRequest().getParams();
+        HashMap<String,Object> params = fd.getParams();
         Boolean forceDelete = (Boolean) params.get("forceDelete");
         if( forceDelete == null ) forceDelete = false;
         
-        Request req = getRequest();
-        String finalPath = req.getFinalPath();
+        String finalPath = fd.getFinalPath();
 
         File finalFile = new File( finalPath );
-        if( ( iAmATarget( name ) || forceDelete ) && finalFile.exists() ){
+        if( ( iAmATarget( fd ) || forceDelete ) && finalFile.exists() ){
             boolean deleted = finalFile.delete();
             if( !deleted ){
                 // throw exception if the delete failed
@@ -365,11 +362,10 @@ public class RushDFS{
         }
     }
 
-    protected boolean iAmATarget( String name )
+    protected boolean iAmATarget( DFSFile fd )
     throws LocatorException{
         boolean isTarget = false;
-        ArrayList<HashMap> nodes = getTargetNodes( name );
-        Integer targetPos = getTargetNodePosition( nodes );
+        Integer targetPos = getTargetNodePosition( fd );
         if( targetPos != null && targetPos > POSITION_NONE ){
             isTarget = true;
         } else {
@@ -378,21 +374,25 @@ public class RushDFS{
         return isTarget;
     }
     
-    public ArrayList<HashMap> getTargetNodes( String name )
+    protected ArrayList<HashMap> getTargetNodes( DFSFile fd )
     throws LocatorException{
-        return getRequest().getLocator().findNodes( name );
+        return fd.getLocator().findNodes( fd.getFileName() );
     }
 
-    protected int getTargetNodePosition( ArrayList<HashMap> nodes ){
+    protected int getTargetNodePosition( DFSFile fd )
+    throws LocatorException{
         int position = POSITION_NONE;
         int n = 0;
-        String thisProxyUrl = getRequest().getProxyUrl();
-        for( HashMap node : nodes ){
-            if( node.get("proxyUrl") == thisProxyUrl ){
-                position = n;
-                break;
+        String thisProxyUrl = fd.getProxyUrl();
+        if( thisProxyUrl != null ){
+            ArrayList<HashMap> nodes = fd.getLocator().findNodes( fd.getFileName() );
+            for( HashMap node : nodes ){
+                if( thisProxyUrl.equals(node.get("proxyUrl")) ){
+                    position = n;
+                    break;
+                }
+                n++;
             }
-            n++;
         }
         return position;
     }

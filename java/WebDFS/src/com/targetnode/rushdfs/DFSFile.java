@@ -1,8 +1,6 @@
-/*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
+/**
+ * DFSFile - distributed file system file descriptor
  */
-
 package com.targetnode.rushdfs;
 
 import com.targetnode.data.ILocator;
@@ -13,9 +11,10 @@ import java.util.HashMap;
  *
  * @author shane
  */
-public class Request {
+public class DFSFile {
 
     protected HashMap<String,Object> params = null;
+    protected String fileName = null;
     protected ILocator locator = null;
     protected String finalDir = null;
     protected String finalPath = null;
@@ -25,6 +24,14 @@ public class Request {
     protected byte[] readBuffer = null;
     protected HashMap<String, Object> dataConfig = null;
     protected InputStream inputStream = null;
+
+    public String getFileName() {
+        return fileName;
+    }
+
+    public void setFileName(String fileName) {
+        this.fileName = fileName;
+    }
 
     public InputStream getInputStream() {
         return inputStream;
