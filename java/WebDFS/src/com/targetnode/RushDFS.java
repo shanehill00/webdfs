@@ -13,6 +13,7 @@ import com.targetnode.rushdfs.RushDFSException;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.channels.FileChannel;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -172,7 +173,7 @@ public class RushDFS{
      * @param params
      * @throws com.targetnode.data.locator.LocatorException
      */
-    public void initRequest( HashMap<String, Object> params ) throws LocatorException{
+    public void openRequest( HashMap<String, Object> params ) throws LocatorException{
         String threadName = Thread.currentThread().getName();
         requests.put( threadName, new Request() );
         Request request = requests.get(threadName);
@@ -198,6 +199,15 @@ public class RushDFS{
 
         request.setReadBuffer( new byte[spoolReadSize] );
 
+        request.setInputStream((InputStream) params.get("inputStream") );
+    }
+
+    public void closeRequest(){
+        requests.remove( Thread.currentThread().getName() );
+    }
+
+    protected Request getRequest(){
+        return requests.get( Thread.currentThread().getName() );
     }
 
     protected ILocator getLocator( HashMap<String, Object> dataConfig )
@@ -209,13 +219,10 @@ public class RushDFS{
         return locators.get(dataConfig);
     }
 
-    public void writeFile( ServletInputStream input ) throws IOException, RushDFSException{
+    public void writeFile( ) throws IOException, RushDFSException{
+        InputStream input = getRequest().getInputStream();
         spoolData( input );
         saveData();
-    }
-
-    protected Request getRequest(){
-        return requests.get( Thread.currentThread().getName() );
     }
 
     /*
@@ -226,7 +233,7 @@ public class RushDFS{
      *
      * we use file_put_contents if the dio libs are not available
      */
-    protected void spoolData( ServletInputStream input )
+    protected void spoolData( InputStream input )
     throws IOException, RushDFSException
     {
         // write stdin to a temp file

@@ -26,6 +26,14 @@ public class Request {
     protected HashMap<String, Object> dataConfig = null;
     protected InputStream inputStream = null;
 
+    public InputStream getInputStream() {
+        return inputStream;
+    }
+
+    public void setInputStream(InputStream inputStream) {
+        this.inputStream = inputStream;
+    }
+
     public HashMap<String, Object> getDataConfig() {
         return dataConfig;
     }

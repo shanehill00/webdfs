@@ -63,14 +63,13 @@ public class WebDFS extends HttpServlet {
      */
     @Override
     public void doPut(HttpServletRequest request, HttpServletResponse response){
-        HashMap<String, Object> reqParams = getRequestParams( request );
 
         try{
 
-            fs.initRequest( reqParams );
-            ServletInputStream is = request.getInputStream();
-            fs.writeFile( is );
-            is.close();
+            HashMap<String, Object> reqParams = getRequestParams( request );
+            fs.openRequest( reqParams );
+            fs.writeFile();
+            fs.closeRequest();
 
             response.setStatus(204);
             response.setContentLength(0);
@@ -95,7 +94,8 @@ public class WebDFS extends HttpServlet {
      * @param request
      * @return
      */
-    protected HashMap<String,Object> getRequestParams( HttpServletRequest request ){
+    protected HashMap<String,Object> getRequestParams( HttpServletRequest request )
+    throws IOException{
         HashMap<String, Object> params = new HashMap<String, Object>();
         params.put("fileName" , "");
         params.put("pathHash" , "");
@@ -108,6 +108,7 @@ public class WebDFS extends HttpServlet {
         params.put("moveContext" , RushDFS.MOVE_CONTEXT_START);
         params.put("getContext" , "");
         params.put("propagateDelete" , 1);
+        params.put("inputStream", request.getInputStream() );
 
         String fileName = request.getPathInfo();
         if( fileName != null && fileName.length() > 0){
