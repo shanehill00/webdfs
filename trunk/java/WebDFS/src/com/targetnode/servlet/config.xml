@@ -67,7 +67,7 @@
              This can be a direct access or maybe something like an apache rewrite rule.
              This is the url to which all of the PUTs, GETs, MOVEs and DELETEs are sent.
             -->
-            <thisProxyUrl>http://192.168.0.2:80/dfs.php</thisProxyUrl>
+            <thisProxyUrl>http://192.168.0.2:8080/webdfs</thisProxyUrl>
 
             <!--
              boolean indicating whether or not to fsync
@@ -142,8 +142,8 @@
                     <weight>1</weight>
                     <nodes>
                         <node>
-                            <proxyUrl>http://192.168.0.2:80/dfs.php</proxyUrl>
-                            <staticUrl>http://192.168.0.2:80</staticUrl>
+                            <proxyUrl>http://192.168.0.2:8080/webdfs</proxyUrl>
+                            <staticUrl>http://192.168.0.2:8080/dfs</staticUrl>
                         </node>
                     </nodes>
                 </subCluster>

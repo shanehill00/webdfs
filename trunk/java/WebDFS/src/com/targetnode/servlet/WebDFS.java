@@ -7,6 +7,7 @@ package com.targetnode.servlet;
 import com.targetnode.RushDFS;
 import com.targetnode.data.locator.LocatorException;
 import com.targetnode.rushdfs.RushDFSException;
+import com.targetnode.rushdfs.DFSFile;
 import java.io.*;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -67,9 +68,9 @@ public class WebDFS extends HttpServlet {
         try{
 
             HashMap<String, Object> reqParams = getRequestParams( request );
-            fs.openRequest( reqParams );
-            fs.writeFile();
-            fs.closeRequest();
+            DFSFile fd = fs.open( reqParams );
+            fs.write( fd );
+            fs.close( fd );
 
             response.setStatus(204);
             response.setContentLength(0);
@@ -87,6 +88,35 @@ public class WebDFS extends HttpServlet {
 
     }
 
+    /**
+     * @param request
+     * @param response
+     */
+    @Override
+    public void doDelete(HttpServletRequest request, HttpServletResponse response){
+
+        try{
+
+            HashMap<String, Object> reqParams = getRequestParams( request );
+            DFSFile fd = fs.open( reqParams );
+            fs.unlink( fd );
+            fs.close( fd );
+
+            response.setStatus(204);
+            response.setContentLength(0);
+
+        } catch( LocatorException e ) {
+            e.printStackTrace();
+            // need to return a 500 error to the client at this point
+        } catch( IOException e ){
+            e.printStackTrace();
+            // need to return a 500 error to the client at this point
+        } catch( RushDFSException e ) {
+            e.printStackTrace();
+            // need to return a 500 error to the client at this point
+        }
+
+    }
     /**
      * retrieves values from the request headers
      * and prepares them for use by RushDFs
