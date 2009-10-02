@@ -39,7 +39,7 @@
 <!--
      the number of bytes to read when spooling a file to disk
 -->
-    <spoolReadSize>10240000</spoolReadSize>
+    <spoolReadSize>51200</spoolReadSize>
 
 <!--
      whether or not to write debug messages to the error log
@@ -73,7 +73,7 @@
              boolean indicating whether or not to fsync
              after writing the first replicant.
             -->
-            <fsync>true</fsync>
+            <fsync>false</fsync>
 
             <!--
             =========================================================

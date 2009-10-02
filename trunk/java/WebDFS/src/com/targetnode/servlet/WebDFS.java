@@ -11,6 +11,7 @@ import com.targetnode.rushdfs.DFSFile;
 import java.io.*;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.Properties;
 import java.util.Random;
 import java.util.zip.CRC32;
 import javax.servlet.*;
@@ -29,15 +30,13 @@ public class WebDFS extends HttpServlet {
     @Override
     public void init(){
         try{
-            HashMap<String, Object> dfsConfig = getDFSConfig();
+            String configFileName = System.getProperty("webdfs.config");
+            HashMap<String, Object> dfsConfig = getDFSConfig( configFileName );
             fs = new com.targetnode.RushDFS( dfsConfig );
         } catch (ConfigurationException e){
             e.printStackTrace();
             System.exit(1);
-        } //catch( LocatorException e ){
-            //e.printStackTrace();
-            //System.exit(2);
-        //}
+        }
     }
 
     /**
@@ -213,11 +212,11 @@ public class WebDFS extends HttpServlet {
         return pathHash;
     }
 
-    protected HashMap<String, Object> getDFSConfig()
+    protected HashMap<String, Object> getDFSConfig( String configFileName )
     throws ConfigurationException
     {
         config = new XMLConfiguration();
-        config.setFileName("/Users/shane/dev/webdfs/java/WebDFS/src/com/targetnode/servlet/config.xml");
+        config.setFileName( configFileName );
 
         HashMap<String,Object> dfsConfig = new HashMap<String, Object>();
 
@@ -338,5 +337,10 @@ public class WebDFS extends HttpServlet {
         }
 
         return dfsConfig;
+    }
+
+    public static void main( String args[] ){
+        InputStream fileStream = ClassLoader.getSystemResourceAsStream("WebDFS.properties");
+        try{fileStream.close();}catch(IOException e){}
     }
 }
