@@ -48,9 +48,6 @@ public class RushDFS{
      */
     protected ConcurrentHashMap<HashMap<String,Object>,ILocator> locators = null;
 
-    protected ConcurrentHashMap<com.targetnode.rushdfs.DFSFile,com.targetnode.rushdfs.DFSFile> requests
-            = new ConcurrentHashMap<com.targetnode.rushdfs.DFSFile,com.targetnode.rushdfs.DFSFile>();
-
     /**
      * an array that holds all the target nodes
      * for the file being saved
@@ -204,9 +201,7 @@ public class RushDFS{
         return rFD;
     }
 
-    public void close( DFSFile fd ){
-        requests.remove( fd );
-    }
+    public void close( DFSFile fd ){}
 
     protected ILocator getLocator( HashMap<String, Object> dataConfig )
     throws LocatorException{
