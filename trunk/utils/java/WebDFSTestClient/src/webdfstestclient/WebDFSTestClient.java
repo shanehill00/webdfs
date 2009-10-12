@@ -127,14 +127,21 @@ public class WebDFSTestClient extends Thread {
     private static PrintWriter uploadedFilesFile = null;
     
     private ArrayList<String> filesToUpload = null;
+    private File filesToUploadStat = null;
+    private long filesToUploadLM = 0;
+
     private ArrayList<String> baseUrls = null;
+    private File baseUrlsStat = null;
+    private long baseUrlsLM = 0;
 
     public WebDFSTestClient( long bytesToUpload, int numThreads, double writeLoad, String filesToUploadFile, String baseUrlFile, long sleep, long uploadWait ){
         this.bytesToUpload = bytesToUpload;
         this.writeLoad = writeLoad;
         WebDFSTestClient.numThreads.compareAndSet(0, numThreads);
-        filesToUpload = fileToArrayList(filesToUploadFile);
-        baseUrls = fileToArrayList(baseUrlFile);
+
+        filesToUploadStat = new File(filesToUploadFile);
+        baseUrlsStat = new File(baseUrlFile);
+
         this.sleep = sleep;
         this.uploadWait = uploadWait;
         // create the file writers
@@ -403,15 +410,14 @@ public class WebDFSTestClient extends Thread {
             String whichUrl;
             
             if( ( ran.nextDouble() ) < writeLoad ){
-                // randomly select a baseurl and filename to use for an upload
+                
                 String filename = UUID.randomUUID().toString();
-                whichUrl = baseUrls.get( ran.nextInt( baseUrls.size() ) ) + "/" + filename;
-
-                // randomly choose a file for upload
-                String whichFile = filesToUpload.get( ran.nextInt( filesToUpload.size() ) );
+                whichUrl = getUrl( filename );
+                String whichFile = getFileToUpload();
                 String fileType = "text/plain";
 
                 doPut( whichUrl, whichFile, fileType, filename );
+
             } else if( uploadedFiles.size() > 0 ){
                 fileInfo = uploadedFiles.get( ran.nextInt( uploadedFiles.size() ) );
                 currentTime = System.currentTimeMillis();
@@ -420,6 +426,34 @@ public class WebDFSTestClient extends Thread {
                 }
             }
         }
+    }
+
+    /**
+     * returns a random url used for PUTting a file to the dfs
+     *
+     * we occasionally go to disk and refresh the baseurls data
+     * this allows us to add more urls when we scale out during a test
+     *
+     * @param filename - this value is appended to the end of a url to form a complete and absolte url
+     *                   used or PUTting a file
+     * @return
+     */
+    private String getUrl( String filename ){
+        if( baseUrlsStat.lastModified() != baseUrlsLM ){
+            baseUrls = fileToArrayList(baseUrlsStat.getPath());
+            baseUrlsLM = baseUrlsStat.lastModified();
+        }
+
+        String whichUrl = baseUrls.get( ran.nextInt( baseUrls.size() ) ) + "/" + filename;
+        return whichUrl;
+    }
+
+    private String getFileToUpload(){
+        if( filesToUploadStat.lastModified() != filesToUploadLM ){
+            filesToUpload = fileToArrayList( filesToUploadStat.getPath() );
+            filesToUploadLM = filesToUploadStat.lastModified();
+        }
+        return filesToUpload.get( ran.nextInt( filesToUpload.size() ) );
     }
 
     private void writeStats(){
