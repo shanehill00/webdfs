@@ -241,4 +241,6 @@ return array(
                     'class' => 'WebDFS_Move',
                 )
             ),
+            'lastConfigCheck' => 0,
+            'ttl' => 60,
         );
