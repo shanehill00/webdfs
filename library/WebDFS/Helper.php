@@ -54,10 +54,18 @@ class WebDFS_Helper {
     public static function getConfig( $name = "cluster_config.php" ){
         if( !self::$config || $name ){
             if( extension_loaded("apc") ){
-                self::$config = apc_fetch("webdfsconfig");
+                $currTime = time();
+                self::$config = apc_fetch("WebDFSConfig");
+                if( self::$config ){
+                    $timeAlive = ($currTime - self::$config['lastConfigCheck']);
+                    if( self::$config['ttl'] <= $timeAlive ){
+                        self::$config = false;
+                    }
+                }
                 if( self::$config === false ){
                     self::$config = require $name;
-                    apc_store("webdfsconfig", self::$config);
+                    self::$config['lastConfigCheck'] = $currTime;
+                    apc_store("WebDFSConfig", self::$config);
                 }
             } else {
                 self::$config = require $name;
