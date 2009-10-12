@@ -1,8 +1,3 @@
-/*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
- */
-
 package com.targetnode;
 
 import com.targetnode.data.ILocator;
@@ -217,14 +212,6 @@ public class RushDFS{
         saveData( fd );
     }
 
-    /*
-     * get the data from stdin and put it in a temp file
-     *
-     * we use the dio functions if configured to do so
-     * as they are much faster than file_put_contents on big files (1mb+)
-     *
-     * we use file_put_contents if the dio libs are not available
-     */
     protected void spoolData( DFSFile fd )
     throws IOException, RushDFSException
     {
