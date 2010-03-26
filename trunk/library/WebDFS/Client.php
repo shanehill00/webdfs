@@ -98,14 +98,16 @@ class WebDFS_Client{
     }
 
     public function getPaths( $fileId ){
+    	$fileId = trim($fileId,'/');
         $paths = array();
         $nodes = $this->locator->findNodes( $fileId );
-        $pathHash = WebDFS_Helper::getPathHash($fileId);
+        $pathHash = WebDFS_Helper::getPathHash( $fileId );
+        $filename = basename($fileId);
         foreach( $nodes as $node ){
             $data = array();
             $data['url'] = $node['proxyUrl'].'/'.$fileId;
             $data['proxyUrl'] = $node['proxyUrl'];
-            $data['staticUrl'] = $node['staticUrl']."/$pathHash/$fileId";
+            $data['staticUrl'] = $node['staticUrl']."/$pathHash/$filename";
             $paths[] = $data;
         }
         return $paths;

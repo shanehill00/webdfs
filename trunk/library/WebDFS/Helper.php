@@ -95,15 +95,13 @@ class WebDFS_Helper {
         }
 
         if( isset( $_SERVER['PATH_INFO'] ) && $_SERVER['PATH_INFO'] !== '' ){
-            $params['name'] = trim($_SERVER['PATH_INFO'],'/');
-            $params['name'] = str_replace( array('/','\\',':','*','?','|','<','>','"','%'),"", $params['name'] );
 
             $params['action'] = strtolower( $_SERVER['REQUEST_METHOD'] );
-
-            // get the last element of the path info
-            $params['fileName'] = split( '/', $params['name'] );
-            $params['fileName'] = array_pop( $params['fileName'] );
-
+            
+	        $params['name'] = trim($_SERVER['PATH_INFO'],'/');
+	        $params['name'] = str_replace( array('\0'),"", $params['name'] );
+            $params['fileName'] = basename($params['name']);
+            
             // hash the path info
             $params['pathHash'] = self::getPathHash( $params['name'] );
 
@@ -147,17 +145,24 @@ class WebDFS_Helper {
         }
         return $params;
     }
-
+    
     public static function getPathHash( $name ){
-        $path = "00/00";
-        $pathHash = ( crc32( $name ) >> 16 ) & 0x7fff;
-        mt_srand( $pathHash );
-        $pathHash = sprintf("%05s", mt_rand(0,9999));
-        $path[0] = $pathHash[1];
-        $path[1] = $pathHash[2];
-        $path[2] = "/";
-        $path[3] = $pathHash[3];
-        $path[4] = $pathHash[4];
+    	$c = self::getConfig();
+    	$path = '';
+    	if( $c['usePathHashing'] ){
+	        $name = str_replace( array('/','\\',':','*','?','|','<','>','"','%'),"", $name );
+	        $path = "00/00";
+	        $pathHash = ( crc32( $name ) >> 16 ) & 0x7fff;
+	        mt_srand( $pathHash );
+	        $pathHash = sprintf("%05s", mt_rand(0,9999));
+	        $path[0] = $pathHash[1];
+	        $path[1] = $pathHash[2];
+	        $path[2] = "/";
+	        $path[3] = $pathHash[3];
+	        $path[4] = $pathHash[4];
+    	} else {
+    		$path = dirname( $name );
+    	}
         return $path;
     }
 
