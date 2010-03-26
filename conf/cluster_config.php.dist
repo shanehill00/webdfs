@@ -38,6 +38,10 @@ return array(
             // cannot find the requested file
             'autoMove' => false,
 
+         	// boolean indicating whether or not to hash the file name
+        	// and path when a file is PUT to WebDFS
+        	'usePathHashing' => false,
+        	
             //  the path that the fileinfo extension will use
             'magicDbPath' => '/sw/share/file/magic',
 
@@ -243,4 +247,4 @@ return array(
             ),
             'lastConfigCheck' => 0,
             'ttl' => 60,
-        );
+       );
