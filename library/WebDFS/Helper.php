@@ -162,6 +162,9 @@ class WebDFS_Helper {
 	        $path[4] = $pathHash[4];
     	} else {
     		$path = dirname( $name );
+    		if( $path == '.' ){
+    			$path = '';
+    		}
     	}
         return $path;
     }

@@ -292,11 +292,6 @@ class WebDFS
                 $msg = sprintf( $this->config['exceptionMsgs']['incompleteWrite'], $this->params['contentLength'], $totalWritten );
                 throw new WebDFS_Exception( $msg );
             }
-            // call fsync if:
-            //   we are configured to do so
-            //   the fsync function exists
-            //   we are a target storage node for the data
-            //   and this is the first replica to be created
             $this->fsync( $fd );
             dio_close( $fd );
             fclose( $input );
@@ -331,7 +326,10 @@ class WebDFS
     }
 
     protected function saveData( ){
-        $this->makeDir( $this->finalDir );
+        if( !$this->makeDir( $this->finalDir ) ){
+            $msg = sprintf($this->config['exceptionMsgs']['failedDirCreate'], $this->finalDir);
+            throw new WebDFS_Exception( $msg  );
+        }
         if(  !rename( $this->tmpPath, $this->finalPath ) ){
             // throw exception if the rename failed
             $msg = sprintf($this->config['exceptionMsgs']['failedRename'],$this->tmpPath, $this->finalPath);
@@ -343,20 +341,26 @@ class WebDFS
      * created the necessary storage directory if not yet existent
      */
      protected function makeDir( $dir = null ){
+     	$created = false;
         if( is_null($dir)){
             $dir = $this->finalDir;
         }
         if( extension_loaded("apc") ){
-            $this->apcMkdir();
+            $created = $this->apcMkdir();
         } else {
-            if( !file_exists( $dir ) ){
+            if( !is_dir( $dir ) ){
                 // suppress any probs in case someone
                 // else is making this directory
-                if(!@mkdir( $dir, 0755, true )){
+                if( @mkdir( $dir, 0755, true ) ){
+                	$created = true;
+                } else {
                     $this->debugLog('apcMkdir', $dir );
                 }
+            } else {
+	        	$created = true;
             }
         }
+        return $created;
      }
 
     /**
@@ -381,18 +385,24 @@ class WebDFS
     }
 
     protected function apcMkdir(){
+    	$created = false;
         $knownDir = apc_fetch( $this->finalDir );
         if( !$knownDir ){
-            if( !file_exists( $this->finalDir ) ){
+            if( !is_dir( $this->finalDir ) ){
                 // suppress any probs in case someone
                 // else is making this directory
 
-                if(!@mkdir( $this->finalDir, 0755, true )){
+                if( @mkdir( $this->finalDir, 0755, true ) ){
+                    $created = true;
+                } else {
                     $this->debugLog('apcMkdir', $this->finalDir );
                 }
+            } else {
+            	$created = true;
             }
             apc_store( $this->finalDir, 1 );
         }
+        return $created;
     }
 
     protected function getForwardInfo( $replica = null, $position = null, $replicationDegree = null, $targetNodes = null ){

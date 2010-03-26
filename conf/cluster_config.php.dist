@@ -184,6 +184,7 @@ return array(
                 'sendStartMove'   => "DEBUG: replica %s : forwarded a move cmd in start context to %s moveConfigIndex: %s configIndex: %s",
                 'sendDataToStartMove' => "DEBUG: forwarded %s to start a move cmd in create context to %s",
                 'sendDataForMove' => "DEBUG: replica %s : copied data and forwarded a move cmd in create context to %s",
+                'apcMkdir' => "DEBUG: could not create directory '%s'.  maybe the directory is already created or there is a permissions problem",
              ),
 
             'errMsgs' => array(
@@ -212,6 +213,7 @@ return array(
                 'incompleteWrite' => "EXCEPTION: Did not write all data!  Expected: [%s] Got: [ %s ]",
                 'failedRename' => "EXCEPTION: final move operation failed when copying %s to %s",
                 'failedUnlink' => "EXCEPTION: could not unlink %s",
+                'failedDirCreate' => "EXCEPTION: could not create directory:  %s.  Maybe there is a file with the same name as one of the directories in the path.",
                 'handleDeleteDataError' => "EXCEPTION: %s : %s : $%s : %s",
                 'handleForwardDeleteError' => "EXCEPTION: %s : %s : $%s : %s",
                 'handleMoveDeleteError' => "EXCEPTION: %s : %s : $%s : %s",

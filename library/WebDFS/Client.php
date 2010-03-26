@@ -102,12 +102,17 @@ class WebDFS_Client{
         $paths = array();
         $nodes = $this->locator->findNodes( $fileId );
         $pathHash = WebDFS_Helper::getPathHash( $fileId );
+        
         $filename = basename($fileId);
         foreach( $nodes as $node ){
             $data = array();
             $data['url'] = $node['proxyUrl'].'/'.$fileId;
             $data['proxyUrl'] = $node['proxyUrl'];
-            $data['staticUrl'] = $node['staticUrl']."/$pathHash/$filename";
+            if( $pathHash === '' ){
+	            $data['staticUrl'] = $node['staticUrl']."/$filename";
+            } else {
+	            $data['staticUrl'] = $node['staticUrl']."/$pathHash/$filename";
+            }
             $paths[] = $data;
         }
         return $paths;
