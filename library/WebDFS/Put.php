@@ -140,8 +140,9 @@ class WebDFS_Put extends WebDFS{
             } else if(isset($this->params['contentLength'])){
                 $size = $this->params['contentLength'];
             } else {
-                $msg = sprintf( $this->config['exceptionMsgs']['sendDataForPut'], $filePath );
-                throw new WebDFS_Exception_PutException( $msg );
+                $size = filesize( $filePath );
+            	//$msg = sprintf( $this->config['exceptionMsgs']['sendDataForPut'], $filePath );
+                //throw new WebDFS_Exception_PutException( $msg );
             }
             
             $errNo = 0;
