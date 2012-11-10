@@ -146,10 +146,12 @@ class WebDFS_Helper {
         return $params;
     }
     
-    public static function getPathHash( $name ){
-    	$c = self::getConfig();
+    public static function getPathHash( $name, $c = null ){
+        if( !$c ){
+        	$c = self::getConfig();
+        }
     	$path = '';
-    	if( $c['usePathHashing'] ){
+    	if( isset( $c['usePathHashing'] ) && $c['usePathHashing'] ){
 	        $name = str_replace( array('/','\\',':','*','?','|','<','>','"','%'),"", $name );
 	        $path = "00/00";
 	        $pathHash = ( crc32( $name ) >> 16 ) & 0x7fff;
