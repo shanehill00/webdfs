@@ -27,6 +27,8 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 */
 
+require_once 'WebDFS/Helper.php';
+
 class WebDFS_Client{
 
     /**
@@ -46,10 +48,10 @@ class WebDFS_Client{
     protected $errs;
 
     public function __construct( $config ){
-        $config = $config['data'][0];
-        require_once( $config['locatorClassPath'] );
-        $locatorClassName = $config['locatorClassName'];
-        $this->locator = new $locatorClassName( $config );
+        $nodeConfig = $config['data'][0];
+        require_once( $nodeConfig['locatorClassPath'] );
+        $locatorClassName = $nodeConfig['locatorClassName'];
+        $this->locator = new $locatorClassName( $nodeConfig );
         $this->config = $config;
 
         $this->errs = array(
@@ -101,8 +103,7 @@ class WebDFS_Client{
     	$fileId = trim($fileId,'/');
         $paths = array();
         $nodes = $this->locator->findNodes( $fileId );
-        $pathHash = WebDFS_Helper::getPathHash( $fileId );
-        
+        $pathHash = WebDFS_Helper::getPathHash( $fileId, $this->config );
         $filename = basename($fileId);
         foreach( $nodes as $node ){
             $data = array();
@@ -202,5 +203,39 @@ class WebDFS_Client{
             }
             throw new $exceptionClass( $msg, $data );
         }
+    }
+    
+    /**
+     * 
+     * will fetch a file from the passed url and upload into webdfs
+     * 
+     * @param string $url
+     * @param string $id
+     * 
+     * @return array the same data as returned by egtPaths( fileId ) 
+     * 
+     */
+    public function fetchFileFromUrl( $url, $id = null ){
+        
+        if( !$id ){
+            $id = uuid_create();
+        }
+        
+        // get the image from the url
+        $filedir = sys_get_temp_dir();
+        $tmpfname = tempnam( $filedir, 'WebDFS' );
+        file_put_contents( $tmpfname, file_get_contents( $url ) );
+        
+        // now upload the file into web dfs
+        $this->set( $id, $tmpfname );
+        
+        // now we remove the tmp file
+        unlink($tmpfname);
+        
+        // now get the details from getpaths and return them
+        $details = $this->getPaths($id);
+        $details['id'] = $id;
+        
+        return $details;
     }
 }
